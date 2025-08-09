@@ -1,4 +1,0 @@
-repository "4ert/Slovotron@740514@cloud"
-  path "/"
-    br "/main"
-    co "/main"
