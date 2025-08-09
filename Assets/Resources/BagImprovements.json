@@ -1,0 +1,46 @@
+﻿{
+  "improvements": [
+    {
+      "id": 1,
+      "name": "Удвоение очков",
+      "description": "Удваивает очки для плашки с буквой <b>{0}</b> (текущие: {1} → {2}).",
+      "effect": "DoublePoints",
+      "rarity": "Common",
+      "isPermanent": false
+    },
+    {
+      "id": 2,
+      "name": "+1 очко к букве",
+      "description": "Все плашки с буквой <b>{0}</b> получают +1 очко (текущие: {1} → {2}).",
+      "effect": "AddOnePointToAll",
+      "rarity": "Common",
+      "isPermanent": false
+    },
+    {
+      "id": 3,
+      "name": "Заглавная буква",
+      "description": "Буква <color=red><b>{0}</b></color> даёт +10 очков в начале слова (текущие: {1}).",
+      "effect": "CapitalLetter",
+      "rarity": "Rare",
+      "allowedLetters": ["А", "Б", "В", "К", "М", "Н", "О", "П", "Р", "С", "Т"],
+      "isPermanent": false
+    },
+    {
+      "id": 4,
+      "name": "Конечная буква",
+      "description": "Буква <b>{0}.</b> даёт +10 очка в конце (текущие: {1}).",
+      "effect": "FinalLetter",
+      "rarity": "Rare",
+      "allowedLetters": ["А", "Е", "Й", "К", "Л", "М", "Н", "О", "Т", "П", "Р", "С", "Ж", "Я"],
+      "isPermanent": false
+    },
+    {
+      "id": 5,
+      "name": "Дикий символ",
+      "description": "Добавляет в мешок плашку <color=green><b>*</b></color> (0 очков). Заменяет любую букву!",
+      "effect": "AddWildcard",
+      "rarity": "Epic",
+      "isPermanent": false
+    }
+  ]
+}

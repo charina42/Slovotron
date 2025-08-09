@@ -1,0 +1,85 @@
+﻿{
+  "improvements": [
+    {
+      "id": 1,
+      "name": "Зеркальное слово",
+      "description": "Если слово начинается и заканчивается на одну и ту же букву, очки за это слово умножаются на <color=green><b>1.5</b></color>.",
+      "shortDescription": "первая и последняя совпадают",
+      "modifier": "x1.5",
+      "effect": "MirrorWordMultiplier",
+      "rarity": "Rare",
+      "isPermanent": true
+    },
+    {
+      "id": 2,
+      "name": "Цепочка слов",
+      "description": "Каждое следующее слово, начинающееся на последнюю букву предыдущего, дает <color=green><b>5(10, 15)</b></color> очков. Сброс при нарушении цепочки.",
+      "shortDescription": "тебе на А",
+      "modifier": "+5..15",
+      "effect": "WordChainMultiplier",
+      "rarity": "Epic",
+      "isPermanent": true
+    },
+   
+    {
+      "id": 3,
+      "name": "Гласное начало",
+      "description": "Если первая буква в слове — гласная, всё слово даёт <color=green><b>+5</b></color> дополнительных очков.",
+      "shortDescription": "первая буква гласная",
+      "modifier": "+5",
+      "effect": "VowelFirstBonus",
+      "rarity": "Common",
+      "isPermanent": true
+    },
+    {
+      "id": 4,
+      "name": "Комбо согласных",
+      "description": "За каждые три подряд идущие согласные в слове +<color=green><b>10</b></color> очков.",
+      "shortDescription": "три согласные подряд",
+      "modifier": "+10",
+      "effect": "ConsonantComboBonus",
+      "rarity": "Rare",
+      "isPermanent": true
+    },
+    {
+      "id": 5,
+      "name": "Две гласные",
+      "description": "За каждые две подряд идущие гласные в слове +<color=green><b>5</b></color> очков.",
+      "shortDescription": "две гласные подряд",
+      "modifier": "+5",
+      "effect": "VowelDuoBonus",
+      "rarity": "Common",
+      "isPermanent": true
+    },
+    {
+      "id": 6,
+      "name": "Две согласных",
+      "description": "За каждые две подряд идущие согласные в слове +<color=green><b>5</b></color> очков.",
+      "shortDescription": "две согдасные подряд",
+      "modifier": "+5",
+      "effect": "ConsonantDuoBonus",
+      "rarity": "Common",
+      "isPermanent": true
+    },
+    {
+      "id": 7,
+      "name": "Все разные",
+      "description": "Если все буквы в слове - разные, очки за это слово умножаются на <color=green><b>2</b></color>.",
+      "shortDescription": "все буквы разные",
+      "modifier": "x2",
+      "effect": "AllDifferent",
+      "rarity": "Rare",
+      "isPermanent": true
+    },
+    {
+      "id": 8,
+      "name": "Разной стоимости",
+      "description": "За каждую букву разной стоимости +<color=green><b>2</b></color> очка.",
+      "shortDescription": "буквы разной стоимости",
+      "modifier": "+2",
+      "effect": "DifferentPoints",
+      "rarity": "Rare",
+      "isPermanent": true
+    }
+  ]
+}
