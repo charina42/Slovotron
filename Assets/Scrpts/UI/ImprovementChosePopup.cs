@@ -32,19 +32,19 @@ public class ImprovementChosePopup : MonoBehaviour
 
     private void UpdateWordAndScoreInfo()
     {
-        // Отображаем слово
-        wordText.text = $"Слово: <color=#FFD700>{_lastWord}</color>";
+        // // Отображаем слово
+        // wordText.text = $"Слово: <color=#FFD700>{_lastWord}</color>";
+        //
+        // // Формируем информацию об очках
+        // string scoreInfo = $"Всего очков: <color=#FFD700>{_lastScoreResult.TotalScore}</color>\n";
+        // scoreInfo += $"Базовые очки: {_lastScoreResult.BaseScore}\n";
+        //
+        // foreach (var bonus in _lastScoreResult.Bonuses)
+        // {
+        //     scoreInfo += $"+{bonus.Amount} ({bonus.Description})\n";
+        // }
         
-        // Формируем информацию об очках
-        string scoreInfo = $"Всего очков: <color=#FFD700>{_lastScoreResult.TotalScore}</color>\n";
-        scoreInfo += $"Базовые очки: {_lastScoreResult.BaseScore}\n";
-        
-        foreach (var bonus in _lastScoreResult.Bonuses)
-        {
-            scoreInfo += $"+{bonus.Amount} ({bonus.Description})\n";
-        }
-        
-        scoreInfoText.text = scoreInfo;
+        scoreInfoText.text = _lastScoreResult.GetFullDescription(_lastWord);
     }
 
     private void ShowOptions(List<ImprovementOption> options)

@@ -16,6 +16,7 @@ public class Bootstrapper : MonoBehaviour
     [SerializeField] private GiveUpPopup giveUpPopup;
     [SerializeField] private GameWinPopup gameWinPopup;
     [SerializeField] private LeaderboardManager leaderboardManager;
+    [SerializeField] private ScoreAnimationController scoreAnimationController;
 
     private void Awake()
     {
@@ -44,6 +45,7 @@ public class Bootstrapper : MonoBehaviour
             gameWinPopup, leaderboardManager);
         
         Services.UI.Initialize(uiRoot, gameManager);
+        scoreAnimationController.Initialize(uiRoundScore, wordPanelManager, improvementPanel);
        
 
         

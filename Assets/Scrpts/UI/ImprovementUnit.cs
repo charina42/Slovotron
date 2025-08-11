@@ -16,4 +16,8 @@
             modifierText.text = option.modifier;
         }
 
+        public string GetImprovementType()
+        {
+            return _option.EffectType.ToString();
+        }
     }
