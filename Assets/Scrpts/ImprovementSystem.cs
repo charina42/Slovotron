@@ -282,13 +282,13 @@ public class ImprovementSystem
         TextAsset jsonFile = Resources.Load<TextAsset>("Improvements");
         Wrapper improvementsWrapper = JsonUtility.FromJson<Wrapper>(jsonFile.text);
         _improvementsDataList = improvementsWrapper.improvements;
-        Debug.Log(_improvementsDataList);
+        // Debug.Log(_improvementsDataList);
 
         // Для улучшений сумки
         TextAsset newJsonFile = Resources.Load<TextAsset>("BagImprovements");
         Wrapper bagImprovementsWrapper = JsonUtility.FromJson<Wrapper>(newJsonFile.text);
         _bagImprovementsDataList = bagImprovementsWrapper.improvements;
-        Debug.Log(_bagImprovementsDataList);
+        // Debug.Log(_bagImprovementsDataList);
     }
     
     

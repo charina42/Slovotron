@@ -16,6 +16,7 @@ public class Bootstrapper : MonoBehaviour
     [SerializeField] private GiveUpPopup giveUpPopup;
     [SerializeField] private GameWinPopup gameWinPopup;
     [SerializeField] private LeaderboardManager leaderboardManager;
+    [SerializeField] private ScoreAnimationController scoreAnimationController;
 
     private void Awake()
     {
@@ -38,12 +39,14 @@ public class Bootstrapper : MonoBehaviour
         Services.Round.Initialize(Services.MetaGameData, uiRoundScore);
         Services.ImprovementSystem.Initialize(Services.LetterBag);
         letterBagPopup.Initialize(Services.LetterBag);
+        scoreAnimationController.Initialize(uiRoundScore, wordPanelManager, improvementPanel);
 
         gameManager.Initialize(Services.MetaGameData, Services.LetterBag,  wordPanelManager, letterBagPopup, Services.Round, Services.Score,  
             Services.ImprovementSystem,  improvementPanel, improvementChosePopup, gameOverPopup, giveUpPopup, 
-            gameWinPopup, leaderboardManager);
+            gameWinPopup, leaderboardManager, scoreAnimationController);
         
         Services.UI.Initialize(uiRoot, gameManager);
+        
        
 
         

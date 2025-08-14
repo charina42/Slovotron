@@ -13,9 +13,9 @@
     {
       "id": 2,
       "name": "Цепочка слов",
-      "description": "Каждое следующее слово, начинающееся на последнюю букву предыдущего, дает <color=green><b>5(10, 15)</b></color> очков. Сброс при нарушении цепочки.",
+      "description": "Если слово начинается на последнюю букву предыдущего, очки умножаются на <color=green><b>2</b></color>",
       "shortDescription": "тебе на А",
-      "modifier": "+5..15",
+      "modifier": "x2",
       "effect": "WordChainMultiplier",
       "rarity": "Epic",
       "isPermanent": true
@@ -66,7 +66,7 @@
       "name": "Все разные",
       "description": "Если все буквы в слове - разные, очки за это слово умножаются на <color=green><b>2</b></color>.",
       "shortDescription": "все буквы разные",
-      "modifier": "x2",
+      "modifier": "x1.5",
       "effect": "AllDifferent",
       "rarity": "Rare",
       "isPermanent": true

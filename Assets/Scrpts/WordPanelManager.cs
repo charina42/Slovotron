@@ -257,4 +257,17 @@ public class WordPanelManager: MonoBehaviour
 
         sequence.OnComplete(() => onComplete?.Invoke());
     }
+    
+    public void PlayLetterAnimation(LetterData letter, int position, float duration = 0.3f)
+    {
+        var letterObj = _lettersInWordSlots[position];
+        if (letterObj == null) return;
+    
+        var letterTile = letterObj.GetComponent<LetterTile>();
+        if (letterTile != null && letterTile.Letter.Equals(letter))
+        {
+            letterTile.PlayJumpAnimation(duration: duration);
+        }
+    }
+    
 }
