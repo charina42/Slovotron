@@ -68,6 +68,7 @@ public class WordGameManager : MonoBehaviour
     private GiveUpPopup _giveUpPopup;
     private GameWinPopup _gameWinPopup;
     private LeaderboardManager _leaderboardManager;
+    private ScoreAnimationController _scoreAnimationController;
 
     private MetaGameData _metaGameData;
 
@@ -75,7 +76,8 @@ public class WordGameManager : MonoBehaviour
     public void Initialize(MetaGameData metaGameData, LetterBag letterBag, WordPanelManager wordPanelManager, LetterBagPopup letterBagPopup,
         RoundManager roundManager, ScoreManager scoreManager, ImprovementSystem improvementSystem, 
         ImprovementPanel improvementPanel, ImprovementChosePopup improvementChosePopup, GameOverPopup gameOverPopup,
-        GiveUpPopup giveUpPopup, GameWinPopup gameWinPopup, LeaderboardManager leaderboardManager)
+        GiveUpPopup giveUpPopup, GameWinPopup gameWinPopup, LeaderboardManager leaderboardManager, 
+        ScoreAnimationController scoreAnimationController)
     {
         _metaGameData = metaGameData; 
         _letterBag = letterBag;
@@ -90,6 +92,7 @@ public class WordGameManager : MonoBehaviour
          _giveUpPopup = giveUpPopup;
          _gameWinPopup = gameWinPopup;
          _leaderboardManager = leaderboardManager;
+         _scoreAnimationController = scoreAnimationController;
         
         submitButton.onClick.AddListener(CheckWord);
         refreshButton.onClick.AddListener(Refresh);
@@ -499,15 +502,21 @@ public class WordGameManager : MonoBehaviour
     private void ProcessValidWord(List<LetterData> letterList, string word)
     {
         var scoreResult = _scoreManager.CalculateWordScore(letterList);
-        AddScore(scoreResult.TotalScore);
+    
+        // Создаем локальный обработчик, который отпишется после выполнения
+        Action animationCompleteHandler = null;
+        animationCompleteHandler = () => 
+        {
+            _scoreAnimationController.OnAnimationComplete -= animationCompleteHandler;
+        
+            _letterBag.IncreaseWordPoints(letterList);
+            AddScore(scoreResult.TotalScore);
+            WordProcessContinue(scoreResult, word);
+        };
 
-        _letterBag.IncreaseWordPoints(letterList);
-
-        _wordPanelManager.PlayWordJumpAnimation(
-            onComplete: () => WordProcessContinue(scoreResult, word),
-            jumpPower: 10f,
-            duration: 0.2f,
-            delayBetweenLetters: 0.15f);
+        // Подписываемся на событие
+        _scoreAnimationController.OnAnimationComplete += animationCompleteHandler;
+        _scoreAnimationController.StartAnimation(scoreResult);
     }
 
     private void WordProcessContinue(ScoreManager.ScoreResult scoreResult, string word)

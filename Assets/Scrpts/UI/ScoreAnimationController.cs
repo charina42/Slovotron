@@ -2,27 +2,34 @@ using DG.Tweening;
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class ScoreAnimationController : MonoBehaviour
 {
-    
     private UIRoundScore _uiRoundScore;
     private WordPanelManager _wordPanelManager;
     private ImprovementPanel _improvementPanel;
     
+    [FormerlySerializedAs("ScorePanel")]
     [Header("References")]
-    [SerializeField] private RectTransform scoreBar;
-    [SerializeField] private GameObject scoreSegmentPrefab;
+    [SerializeField] private GameObject scorePanel;
+    [SerializeField] private RectTransform fillRect;
+    [SerializeField] private TMP_Text scoreText;
     
     [Header("Animation Settings")]
     [SerializeField] private float letterJumpDuration = 0.3f;
-    [SerializeField] private float segmentFillDuration = 0.4f;
-    [SerializeField] private float scoreIncrementDuration = 0.8f;
     [SerializeField] private float bonusHighlightDuration = 0.5f;
+    [SerializeField] private const float MinWidth = 20f;
+    [SerializeField] private const float MaxWidth = 500f;
+    [SerializeField] private float duration = 0.5f;
+    [SerializeField] private float overshootDuration = 0.3f;
+    [SerializeField] private Ease easeType = Ease.OutBack;
     
-    private List<Image> _scoreSegments = new List<Image>();
-    private int _currentSegmentIndex = 0;
+    private float _totalScoreWidthRatio;
+    private int _accumulatedScore; // Накопленный счет
+    private int _currentScore;
     
     public event System.Action OnAnimationStart;
     public event System.Action OnAnimationComplete;
@@ -32,114 +39,172 @@ public class ScoreAnimationController : MonoBehaviour
         _uiRoundScore = uiRoundScore;
         _wordPanelManager = wordPanelManager;
         _improvementPanel = improvementPanel;
+        scorePanel.SetActive(false);
     }
 
     public void StartAnimation(ScoreManager.ScoreResult scoreData)
     {
+        scorePanel.SetActive(true);
         OnAnimationStart?.Invoke();
-        
-        // Инициализация полоски счета
-        InitializeScoreBar(scoreData);
-        
-        // Запуск последовательности анимаций
+        ResetBar();
+
+        _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.TotalScore;
+        _accumulatedScore = 0;
+        scoreText.text = "0";
+
         Sequence animationSequence = DOTween.Sequence();
-        
-        // Анимация букв и добавление сегментов
-        foreach (var letterData in scoreData.LetterScores)
+        float currentTime = 0.3f;
+        float accumulatedWidth = MinWidth;
+
+        // Сначала анимируем все буквы
+        for (int i = 0; i < scoreData.LetterScores.Count; i++)
         {
-            animationSequence.AppendCallback(() => AnimateLetter(letterData.Letter));
-            animationSequence.AppendInterval(letterJumpDuration);
+            var letterData = scoreData.LetterScores[i];
+            int index = i;
+            _currentScore = 0;
+            int letterPoints = letterData.Points;
+            _accumulatedScore += letterData.Points;
+
+            animationSequence.InsertCallback(currentTime,
+                () => AnimateLetter(letterData.Letter, index, letterJumpDuration));
+
+            animationSequence.InsertCallback(currentTime, () =>
+            {
+                _currentScore += letterPoints;
+                scoreText.text = _currentScore.ToString();
+            });
+
+            float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
+
+            // Анимация шкалы
+            animationSequence.Insert(currentTime,
+                DOTween.To(() => accumulatedWidth,
+                        x =>
+                        {
+                            accumulatedWidth = x;
+                            fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
+                        },
+                        targetWidth,
+                        letterJumpDuration)
+                    .SetEase(easeType));
+
+            currentTime += letterJumpDuration;
+            accumulatedWidth = targetWidth;
         }
-        
-        // Анимация бонусов
+
+        // Затем анимируем бонусы за особые буквы (Capital и Final)
         foreach (var bonus in scoreData.BonusScores)
         {
-            animationSequence.AppendCallback(() => ShowBonus(bonus.Description, bonus.Points));
-            animationSequence.AppendInterval(bonusHighlightDuration);
+            // Обрабатываем только базовые бонусы за особые буквы
+            if (!bonus.IsFromImprovement &&
+                (bonus.Description == "CapitalLetter" || bonus.Description == "FinalLetter"))
+            {
+                // Находим соответствующую букву для анимации
+                var letterScore = bonus.Description == "CapitalLetter"
+                    ? scoreData.LetterScores.FirstOrDefault(l => l.IsCapital)
+                    : scoreData.LetterScores.FirstOrDefault(l => l.IsFinal);
+
+                if (letterScore != null)
+                {
+                    int letterIndex = scoreData.LetterScores.IndexOf(letterScore);
+                    int bonusPoints = bonus.Points;
+
+                    animationSequence.InsertCallback(currentTime, () =>
+                    {
+                        // Анимация прыжка буквы
+                        _wordPanelManager.PlayLetterAnimation(letterScore.Letter, letterIndex, letterJumpDuration);
+
+                        // Подсветка бонуса
+                        _improvementPanel.HighlightImprovement(bonus.Description, bonusHighlightDuration);
+                    });
+
+                    _accumulatedScore += bonusPoints;
+
+                    animationSequence.InsertCallback(currentTime, () =>
+                    {
+                        _currentScore += bonusPoints;
+                        scoreText.text = _currentScore.ToString();
+                    });
+
+                    float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
+
+                    animationSequence.Insert(currentTime,
+                        DOTween.To(() => accumulatedWidth,
+                                x =>
+                                {
+                                    accumulatedWidth = x;
+                                    fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
+                                },
+                                targetWidth,
+                                letterJumpDuration)
+                            .SetEase(easeType));
+
+                    currentTime += letterJumpDuration;
+                    accumulatedWidth = targetWidth;
+                }
+            }
         }
-        
-        // Итоговый счет
-        animationSequence.AppendCallback(() => AnimateTotalScore(scoreData.TotalScore));
-        
-        animationSequence.OnComplete(() => OnAnimationComplete?.Invoke());
-    }
-    
-    private void InitializeScoreBar(ScoreManager.ScoreResult scoreData)
-    {
-        // Очистка предыдущих сегментов
-        foreach (var segment in _scoreSegments)
+
+        // Затем анимируем остальные бонусы (улучшения)
+        foreach (var bonus in scoreData.BonusScores)
         {
-            Destroy(segment.gameObject);
+            // Пропускаем уже обработанные базовые бонусы
+            if (!bonus.IsFromImprovement &&
+                (bonus.Description == "CapitalLetter" || bonus.Description == "FinalLetter"))
+                continue;
+
+            var improvementType = bonus.IsFromImprovement ? bonus.SourceImprovement.EffectType : bonus.Description;
+            animationSequence.InsertCallback(currentTime, () => ShowBonus(improvementType, bonus.Points));
+
+            _accumulatedScore += bonus.Points;
+            int bonusPoints = bonus.Points;
+
+            animationSequence.InsertCallback(currentTime, () =>
+            {
+                _currentScore += bonusPoints;
+                scoreText.text = _currentScore.ToString();
+            });
+
+            float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
+
+            animationSequence.Insert(currentTime,
+                DOTween.To(() => accumulatedWidth,
+                        x =>
+                        {
+                            accumulatedWidth = x;
+                            fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
+                        },
+                        targetWidth,
+                        bonusHighlightDuration)
+                    .SetEase(easeType));
+
+            currentTime += bonusHighlightDuration;
+            accumulatedWidth = targetWidth;
         }
-        _scoreSegments.Clear();
-        _currentSegmentIndex = 0;
-        
-        // Создание сегментов
-        int totalSegments = scoreData.LetterScores.Count + scoreData.BonusScores.Count;
-        for (int i = 0; i < totalSegments; i++)
+
+        animationSequence.OnComplete(() =>
         {
-            GameObject segment = Instantiate(scoreSegmentPrefab, scoreBar);
-            Image segmentImage = segment.GetComponent<Image>();
-            segmentImage.fillAmount = 0;
-            _scoreSegments.Add(segmentImage);
-        }
+            scoreText.text = _accumulatedScore.ToString();
+            OnAnimationComplete?.Invoke();
+            scorePanel.SetActive(false);
+        });
     }
-    
-    public void AnimateLetter(LetterData letter)
+
+    private void ResetBar()
     {
-        // Анимация буквы в WordPanelManager
-        _wordPanelManager.PlayWordJumpAnimation();
-        
-        // Добавление сегмента
-        if (_currentSegmentIndex < _scoreSegments.Count)
-        {
-            Image segment = _scoreSegments[_currentSegmentIndex];
-            segment.DOFillAmount(1, segmentFillDuration);
-            segment.color = GetLetterSegmentColor(letter);
-            _currentSegmentIndex++;
-        }
+        fillRect.DOKill();
+        fillRect.sizeDelta = new Vector2(0f, fillRect.sizeDelta.y);
+        _accumulatedScore = 0;
+        scoreText.text = "0";
     }
-    
-    public void ShowBonus(string bonusType, int points)
+
+    private void AnimateLetter(LetterData letter, int position, float duration)
     {
-        // Подсветка улучшения
+        _wordPanelManager.PlayLetterAnimation(letter, position, duration);
+    }
+
+    private void ShowBonus(string bonusType, int points)
+    {
         _improvementPanel.HighlightImprovement(bonusType, bonusHighlightDuration);
-        
-        // Добавление бонусного сегмента
-        if (_currentSegmentIndex < _scoreSegments.Count)
-        {
-            Image segment = _scoreSegments[_currentSegmentIndex];
-            segment.DOFillAmount(1, segmentFillDuration);
-            segment.color = GetBonusSegmentColor(bonusType);
-            _currentSegmentIndex++;
-        }
-    }
-    
-    private void AnimateTotalScore(int totalScore)
-    {
-        // Анимация плавного увеличения общего счета
-        // _uiRoundScore.AnimateScoreChange(totalScore, scoreIncrementDuration);
-    }
-    
-    private Color GetLetterSegmentColor(LetterData letter)
-    {
-        // Цвета для разных типов букв
-        return letter.Type switch
-        {
-            LetterType.Capital => new Color(1f, 0.5f, 0.5f), // Красноватый
-            LetterType.Final => new Color(0.5f, 0.5f, 1f),   // Голубоватый
-            _ => new Color(0.8f, 0.8f, 0.2f)                // Желтый (обычные буквы)
-        };
-    }
-    
-    private Color GetBonusSegmentColor(string bonusType)
-    {
-        // Цвета для разных типов бонусов
-        return bonusType switch
-        {
-            "VowelFirstBonus" => new Color(0.2f, 0.8f, 0.2f), // Зеленый
-            "ConsonantComboBonus" => new Color(0.8f, 0.2f, 0.8f), // Фиолетовый
-            _ => new Color(0.2f, 0.8f, 0.8f) // Голубой (по умолчанию)
-        };
     }
 }

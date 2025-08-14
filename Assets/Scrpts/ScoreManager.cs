@@ -33,16 +33,24 @@ public class ScoreManager
                 if (letter.IsFinal) desc += " (финальная)";
                 desc += "\n";
             }
-        
-            desc += "Бонусы:\n";
-            foreach (var bonus in BonusScores)
+    
+            if (BonusScores.Count > 0)
             {
-                desc += $"+{bonus.Points} ({bonus.SourceImprovement.shortDescription})";
-                if (!string.IsNullOrEmpty(bonus.SourceImprovement.EffectType))
-                    desc += $" [Улучшение: {bonus.SourceImprovement.EffectType}]";
-                desc += "\n";
+                desc += "Бонусы:\n";
+                foreach (var bonus in BonusScores)
+                {
+                    string bonusDesc = bonus.IsFromImprovement ? 
+                        $"+{bonus.Points} ({bonus.SourceImprovement.shortDescription})" :
+                        $"+{bonus.Points} ({bonus.Description})";
+            
+                    desc += bonusDesc;
+            
+                    if (bonus.IsFromImprovement && !string.IsNullOrEmpty(bonus.SourceImprovement.EffectType))
+                        desc += $" [Улучшение: {bonus.SourceImprovement.EffectType}]";
+                    desc += "\n";
+                }
             }
-        
+    
             desc += $"Итого: {TotalScore} очков";
             return desc;
         }

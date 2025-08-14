@@ -38,13 +38,23 @@ public class ImprovementPanel : MonoBehaviour
             var unit = child.GetComponent<ImprovementUnit>();
             if (unit != null && unit.GetImprovementType() == improvementType)
             {
-                // Анимация подсветки
                 var image = child.GetComponent<Image>();
                 if (image != null)
                 {
+                    // Сохраняем исходные значения
+                    Color originalColor = image.color;
+                    Vector3 originalScale = child.localScale;
+                
+                    // Создаем последовательность анимации
                     Sequence highlightSequence = DOTween.Sequence();
-                    highlightSequence.Append(image.DOColor(Color.yellow, duration * 0.3f));
-                    highlightSequence.Append(image.DOColor(Color.white, duration * 0.7f));
+                
+                    // Первая часть: увеличиваем размер и осветляем
+                    highlightSequence.Join(image.DOColor(Color.Lerp(originalColor, Color.white, 0.5f), duration * 0.3f));
+                    highlightSequence.Join(child.DOScale(originalScale * 1.2f, duration * 0.3f));
+                
+                    // Вторая часть: возвращаем к исходному состоянию
+                    highlightSequence.Append(image.DOColor(originalColor, duration * 0.7f));
+                    highlightSequence.Join(child.DOScale(originalScale, duration * 0.7f));
                 }
                 break;
             }
