@@ -28,10 +28,6 @@ public class RoundManager
     private int _wordsPerRound; 
     private int [] _rounds;
     private int _maxRounds;
-    // private int _currentRound = 0;
-    // private int _confirmedWordsCount = 0;
-    // private int _roundScore = 0;
-    
     
     public void Initialize(MetaGameData metaGameData, UIRoundScore uiRoundScore)
     {
@@ -47,6 +43,24 @@ public class RoundManager
     {
         _uiRoundScore.SetValue(YG2.saves.TotalScore, YG2.saves.roundScore, _rounds[YG2.saves.currentRound], 
             YG2.saves.currentRound, YG2.saves.confirmedWordsCount);
+    }
+    
+    public float CalculateWordContributionPercentage(int wordScore)
+    {
+        // Получаем текущий раунд и необходимые для него очки
+        int currentRoundIndex = YG2.saves.currentRound;
+        int requiredScoreForRound = _rounds[currentRoundIndex];
+    
+        // Если раунд уже завершен или слово не принесло очков, возвращаем 0
+        if (requiredScoreForRound <= 0 || wordScore <= 0)
+        {
+            return 0f;
+        }
+    
+        // Рассчитываем процент вклада
+        float contributionPercentage = (float)wordScore / requiredScoreForRound * 100f;
+    
+        return contributionPercentage;
     }
 
     public RoundState  HandleWordConfirmed(int score)

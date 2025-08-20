@@ -510,7 +510,7 @@ public class WordGameManager : MonoBehaviour
             _scoreAnimationController.OnAnimationComplete -= animationCompleteHandler;
         
             _letterBag.IncreaseWordPoints(letterList);
-            AddScore(scoreResult.TotalScore);
+            AddScore(scoreResult.WordScore);
             WordProcessContinue(scoreResult, word);
         };
 
@@ -525,7 +525,7 @@ public class WordGameManager : MonoBehaviour
         _wordPanelManager.ClearWordSlots(true);
         // OnClearWordSlots?.Invoke(true);
         
-        var roundState = _roundManager.HandleWordConfirmed(scoreResult.TotalScore);
+        var roundState = _roundManager.HandleWordConfirmed(scoreResult.WordScore);
         switch (roundState)
         {
             case RoundManager.RoundState.Success:
@@ -546,8 +546,17 @@ public class WordGameManager : MonoBehaviour
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        
-        var improvementOptions = _improvementSystem.ShowImprovementOptions(isRoundEnds);
+
+        var improvementRarityList = new List<ImprovementRarity>();
+        if (!isRoundEnds)
+        {
+            var wordContributionPercentage = _roundManager.CalculateWordContributionPercentage(scoreResult.WordScore);
+            Debug.Log($"wordContributionPercentage {wordContributionPercentage}");
+            
+            improvementRarityList = _improvementSystem.GetWordRarities(wordContributionPercentage);
+        }
+
+        var improvementOptions = _improvementSystem.ShowImprovementOptions(isRoundEnds, improvementRarityList);
         YG2.SaveProgress();
         
         _improvementChosePopup.ShowPopup(improvementOptions, word,  scoreResult);

@@ -48,7 +48,7 @@ public class ScoreAnimationController : MonoBehaviour
         OnAnimationStart?.Invoke();
         ResetBar();
 
-        _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.TotalScore;
+        _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.WordScore;
         _accumulatedScore = 0;
         scoreText.text = "0";
 

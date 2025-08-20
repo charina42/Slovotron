@@ -68,25 +68,11 @@ public class LetterBag
     public void DebugPrintLetterInventory()
     {
         Debug.Log("=== DEBUG: Letter Inventory ===");
-    
-        // foreach (var item in YG2.saves.LetterInventory)
-        // {
-        //     Debug.Log($"Буква: {item.Letter.LetterChar}\n" +
-        //               $"Тип: {item.Letter.Type}\n" +
-        //               $"Очки: {item.Letter.Points}\n" +
-        //               $"Мешок: {item.Counters.InBag}\n" +
-        //               $"Доска: {item.Counters.OnBoard}\n" +
-        //               $"Использовано: {item.Counters.Used}\n" +
-        //               $"Всего: {item.Counters.TotalCount}\n" +
-        //               "---------------------");
-        // }
-    
         Debug.Log($"Total letters in bag: {GetCountInLocation(LetterLocation.InBag)}");
         Debug.Log($"Total letters on board: {GetCountInLocation(LetterLocation.OnBoard)}");
         Debug.Log($"Total used letters: {GetCountInLocation(LetterLocation.Used)}");
     }
     
-
     private void AddLetter(LetterData letter, LetterLocation location, int count = 1)
     {
         var item = YG2.saves.LetterInventory.FirstOrDefault(x => x.Letter.Equals(letter));
@@ -199,7 +185,6 @@ public class LetterBag
 
         return letters[0];
     }
-
 
     private bool IsVowel(char letter)
     {
@@ -328,6 +313,13 @@ public class LetterBag
     {
         var wildSymbol = new LetterData('*', 0, LetterType.Wild);
         AddLetter(wildSymbol, LetterLocation.InBag);
+    }
+    
+    public void AddPremiumLetterToPool(char letterChar)
+    {
+        var points = LetterBasePoints[char.ToLower(letterChar)] + 5;
+        var letter = new LetterData(letterChar, points, LetterType.Premium);
+        AddLetter(letter, LetterLocation.InBag);
     }
     
     

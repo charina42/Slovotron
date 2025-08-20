@@ -10,7 +10,8 @@ public enum LetterType
     Mirrored,
     Frozen,
     Duplicated,
-    Wild
+    Wild,
+    Premium
 }
 
 public class LetterData : IEquatable<LetterData>

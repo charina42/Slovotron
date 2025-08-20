@@ -20,7 +20,7 @@ public class ScoreManager
     {
         public List<LetterScore> LetterScores { get; set; } = new List<LetterScore>();
         public List<BonusScore> BonusScores { get; set; } = new List<BonusScore>();
-        public int TotalScore { get; set; }
+        public int WordScore { get; set; }
     
         public string GetFullDescription(string word)
         {
@@ -51,7 +51,7 @@ public class ScoreManager
                 }
             }
     
-            desc += $"Итого: {TotalScore} очков";
+            desc += $"Итого: {WordScore} очков";
             return desc;
         }
     }
@@ -117,23 +117,23 @@ public class ScoreManager
                 IsFinal = letter.Type == LetterType.Final
             });
         }
-        result.TotalScore = result.LetterScores.Sum(l => l.Points);
+        result.WordScore = result.LetterScores.Sum(l => l.Points);
         
         // Бонусы за специальные буквы
         if (letterDataList[0].Type == LetterType.Capital)
         {
             result.BonusScores.Add(BonusScore.CreateBaseBonus(
                 "CapitalLetter",
-                10));
-            result.TotalScore += 10;
+                5));
+            result.WordScore += 5;
         }
 
         if (letterDataList[^1].Type == LetterType.Final)
         {
             result.BonusScores.Add(BonusScore.CreateBaseBonus(
                 "FinalLetter",
-                10));
-            result.TotalScore += 10;
+                5));
+            result.WordScore += 5;
         }
         
         ApplyBonuses(result, word, letterDataList);
@@ -210,7 +210,7 @@ public class ScoreManager
         {
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, 5));
-            result.TotalScore += 5;
+            result.WordScore += 5;
         }
     }
 
@@ -222,7 +222,7 @@ public class ScoreManager
             int bonus = combos * bonusPerCombo;
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
@@ -234,7 +234,7 @@ public class ScoreManager
             int bonus = combos * 5;
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
@@ -269,7 +269,7 @@ public class ScoreManager
             int bonus = uniquePoints * 2;
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
@@ -277,10 +277,10 @@ public class ScoreManager
     {
         if (word.Distinct().Count() == word.Length)
         {
-            int bonus = (int)(result.TotalScore * 0.5f);
+            int bonus = (int)(result.WordScore * 0.5f);
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
@@ -288,10 +288,10 @@ public class ScoreManager
     {
         if (word.Length > 1 && char.ToLower(word[0]) == char.ToLower(word[^1]))
         {
-            int bonus = (int)(result.TotalScore * 0.5f);
+            int bonus = (int)(result.WordScore * 0.5f);
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
@@ -300,11 +300,11 @@ public class ScoreManager
         if (char.ToLower(word[0]) == char.ToLower(YG2.saves.lastLetterOfPreviousWord))
         {
             YG2.saves.wordChainCount++;
-            int bonus = (int)(result.TotalScore * 1f);
+            int bonus = (int)(result.WordScore * 1f);
             
             result.BonusScores.Add(BonusScore.FromImprovement(
                 improvement, improvement.shortDescription, bonus));
-            result.TotalScore += bonus;
+            result.WordScore += bonus;
         }
     }
 
