@@ -548,11 +548,18 @@ public class WordGameManager : MonoBehaviour
         }
 
         var improvementRarityList = new List<ImprovementRarity>();
-        if (!isRoundEnds)
+        if (isRoundEnds) // isMajor = true
+        {
+            // Для major улучшений нужен список из 3 элементов
+            improvementRarityList = new List<ImprovementRarity> { 
+                ImprovementRarity.Common, 
+                ImprovementRarity.Rare, 
+                ImprovementRarity.Epic 
+            };
+        }
+        else // isMajor = false
         {
             var wordContributionPercentage = _roundManager.CalculateWordContributionPercentage(scoreResult.WordScore);
-            Debug.Log($"wordContributionPercentage {wordContributionPercentage}");
-            
             improvementRarityList = _improvementSystem.GetWordRarities(wordContributionPercentage);
         }
 

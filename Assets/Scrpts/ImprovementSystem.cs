@@ -20,6 +20,8 @@ public class ImprovementSystem
     private LetterBag _letterBag;
     private Dictionary<LetterData, int> _lettersPool;
     
+    private BagImprovementOptionBuilder _bagOptionBuilder; 
+    
     private ImprovementData[] _improvementsDataList;
     private ImprovementData[] _bagImprovementsDataList;
     
@@ -37,14 +39,18 @@ public class ImprovementSystem
         LoadImprovements();
         _letterBag = letterBag;
         
+        _bagOptionBuilder = new BagImprovementOptionBuilder(_letterBag, null);
+        
         ImprovementChosePopup.OnCardSelected += HandleCardSelection;
     }
 
 
-    public List<ImprovementOption> ShowImprovementOptions(bool isMajor, List<ImprovementRarity> rarities = null)
+    public List<ImprovementOption> ShowImprovementOptions(bool isMajor, List<ImprovementRarity> rarities )
     {
+        Debug.Log("ShowImprovementOptions");
         if (rarities == null)
         {
+            Debug.LogWarning("Rarities are null");
             rarities = new List<ImprovementRarity> { 
                 ImprovementRarity.Common, 
                 ImprovementRarity.Rare, 
@@ -57,6 +63,7 @@ public class ImprovementSystem
         }
         
         _lettersPool = _letterBag.AllLetterTiles();
+        _bagOptionBuilder.UpdateLettersPool(_lettersPool);
         var existingOptions = new List<ImprovementOption>();
 
         for (var i = 0; i < 3; i++)
@@ -70,7 +77,9 @@ public class ImprovementSystem
             {
                 option = GenerateRandomBagImprovement(existingOptions, rarities[i]);
             }
-
+            
+            Debug.Log($"ImprovementOption {option.EffectType}");
+            
             YG2.saves.CurrentImprovementOptions.Add(option);
             existingOptions.Add(option);
         }
@@ -112,56 +121,10 @@ public class ImprovementSystem
         do
         {
             var baseImprovement = GetRandomImprovementByRarity(_bagImprovementsDataList.ToList(), rarity);
-
-            char targetLetter;
-            string description;
-            LetterData targetLetterTile;
-
-            switch (baseImprovement.effect)
-            {
-                case "DoublePoints":
-                case "AddOnePointToAll":
-                    var randomTile = DrawRandomWeakestTile();
-                    targetLetterTile = randomTile.Key;
-                    targetLetter = randomTile.Key.LetterChar;
-                    var currentPoints = randomTile.Key.Points;
-                    description = string.Format(
-                        baseImprovement.description,
-                        targetLetter, currentPoints,
-                        baseImprovement.effect == "DoublePoints" ? currentPoints * 2 : currentPoints + 1
-                    );
-                    break;
-
-                case "CapitalLetter":
-                case "FinalLetter":
-                    targetLetter =
-                        baseImprovement.allowedLetters[Random.Range(0, baseImprovement.allowedLetters.Length)][0];
-                    targetLetterTile = null;
-                    description = string.Format(
-                        baseImprovement.description,
-                        targetLetter, _letterBag.LetterBasePoints[char.ToLower(targetLetter)]
-                    );
-                    break;
-
-                case "AddWildcard":
-                    targetLetter = '*';
-                    targetLetterTile = null;
-                    description = baseImprovement.description;
-                    break;
-
-                default:
-                    throw new System.Exception("Неизвестный эффект улучшения!");
-            }
-
-            newOption = new ImprovementOption
-            {
-                EffectType = baseImprovement.effect,
-                TargetLetter = targetLetterTile,
-                TargetLetterChar = targetLetter,
-                Description = description,
-                IsMeta = false,
-                Rarity = rarity
-            };
+            Debug.Log($"Random base Improvement {baseImprovement.effect}");
+            
+            newOption = _bagOptionBuilder.BuildFromImprovementData(baseImprovement);
+            newOption.Rarity = rarity;
 
             // Проверка на уникальность
             isUnique = existingOptions.All(option => newOption.EffectType != option.EffectType 
@@ -242,28 +205,29 @@ public class ImprovementSystem
         }
         else
         {
-            switch (option.EffectType)
-            {
-                case "DoublePoints":
-                    _letterBag.DoublePointsForOneLetter(option.TargetLetter);
-                    break;
-
-                case "AddOnePointToAll":
-                    _letterBag.IncreasePointsForWeakestLetter(option.TargetLetter);
-                    break;
-
-                case "CapitalLetter":
-                    _letterBag.AddCapitalLetterToPool(option.TargetLetterChar);
-                    break;
-
-                case "FinalLetter":
-                    _letterBag.AddFinalLetterToPool(option.TargetLetterChar);
-                    break;
-
-                case "AddWildcard":
-                    _letterBag.AddWildSymbolToPool();
-                    break;
-            }
+            _bagOptionBuilder.HandleImprovementEffect(option);
+            // switch (option.EffectType)
+            // {
+            //     case "DoublePoints":
+            //         _letterBag.DoublePointsForOneLetter(option.TargetLetter);
+            //         break;
+            //
+            //     case "AddOnePointToAll":
+            //         _letterBag.IncreasePointsForWeakestLetter(option.TargetLetter);
+            //         break;
+            //
+            //     case "CapitalLetter":
+            //         _letterBag.AddCapitalLetterToPool(option.TargetLetterChar);
+            //         break;
+            //
+            //     case "FinalLetter":
+            //         _letterBag.AddFinalLetterToPool(option.TargetLetterChar);
+            //         break;
+            //
+            //     case "AddWildcard":
+            //         _letterBag.AddWildSymbolToPool();
+            //         break;
+            // }
 
             YG2.saves.CurrentImprovementOptions.Clear();
             OnImprovementSelected?.Invoke(false); //isMajor = false
@@ -284,30 +248,30 @@ public class ImprovementSystem
     }
     
     
-    private KeyValuePair<LetterData, int> DrawRandomWeakestTile()
-    {
-        var randomLetter = _letterBag.RandomLetter();
-       
-        var tilesForLetter = _lettersPool
-            .Where(tile => tile.Key.LetterChar == randomLetter.LetterChar)
-            .ToList();
-
-        if (!tilesForLetter.Any())
-        {
-            Debug.LogWarning("No tiles for this letter");
-            return default;
-        }
-
-        var minPoints = tilesForLetter.Min(tile => tile.Key.Points);
-        var weakestTiles = tilesForLetter
-            .Where(tile => tile.Key.Points == minPoints)
-            .ToList();
-
-        
-        var selectedTile = weakestTiles[Random.Range(0, weakestTiles.Count)];
-       
-        return selectedTile;
-    }
+    // private KeyValuePair<LetterData, int> DrawRandomWeakestTile()
+    // {
+    //     var randomLetter = _letterBag.RandomLetter();
+    //    
+    //     var tilesForLetter = _lettersPool
+    //         .Where(tile => tile.Key.LetterChar == randomLetter.LetterChar)
+    //         .ToList();
+    //
+    //     if (!tilesForLetter.Any())
+    //     {
+    //         Debug.LogWarning("No tiles for this letter");
+    //         return default;
+    //     }
+    //
+    //     var minPoints = tilesForLetter.Min(tile => tile.Key.Points);
+    //     var weakestTiles = tilesForLetter
+    //         .Where(tile => tile.Key.Points == minPoints)
+    //         .ToList();
+    //
+    //     
+    //     var selectedTile = weakestTiles[Random.Range(0, weakestTiles.Count)];
+    //    
+    //     return selectedTile;
+    // }
     
     public List<ImprovementRarity> GetWordRarities(float contributionPercentage)
     {
@@ -346,8 +310,9 @@ public class ImprovementSystem
 public class ImprovementOption
 {
     public string EffectType;
-    public LetterData TargetLetter;
+    public List<LetterData> TargetLetter;
     public char TargetLetterChar;
+    public char TargetLetterPoints;
     public string Description;
     public string shortDescription;
     public string modifier;

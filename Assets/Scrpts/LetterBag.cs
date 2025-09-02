@@ -204,9 +204,43 @@ public class LetterBag
 
     public void IncreaseWordPoints(List<LetterData> word)
     {
+        var lettersToReturn = new List<LetterData>();
+    
         foreach (var letter in word)
         {
-            IncreasePointsForUsedLetter(letter);
+            switch (letter.Type)
+            {
+                case LetterType.Disposable:
+                    // Удаляем одноразовую букву
+                    MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.OnBoard, -1);
+                    break;
+                
+                case LetterType.Return:
+                    // Помечаем для возврата на поле
+                    lettersToReturn.Add(letter);
+                    MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.Used);
+                    break;
+                
+                case LetterType.Wild when letter.LetterChar == '*':
+                    MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.Used);
+                    break;
+                
+                case LetterType.NeighborMultiplierLeft:
+                case LetterType.NeighborMultiplierRight:
+                    // Множители не приносят очков, просто убираются
+                    MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.Used);
+                    break;
+                
+                default:
+                    IncreasePointsForUsedLetter(letter);
+                    break;
+            }
+        }
+    
+        // Возвращаем буквы типа Return на поле
+        foreach (var returnLetter in lettersToReturn)
+        {
+            MoveLetter(returnLetter, LetterLocation.Used, LetterLocation.OnBoard);
         }
     }
 
@@ -227,36 +261,45 @@ public class LetterBag
         AddLetter(modifiedLetter, LetterLocation.Used);
     }
 
-    public void IncreasePointsForWeakestLetter(LetterData letter)
+    public void IncreasePointsForWeakestLetter(List<LetterData> letterList)
     {
-        if (letter == null)
+        if (letterList == null || letterList.Count == 0)
         {
-            Debug.LogError("Буква равна null!");
+            Debug.LogError("Список букв равен null или пуст!");
             return;
         }
 
-        var item = YG2.saves.LetterInventory.FirstOrDefault(x => x.Letter.Equals(letter));
-        if (item == null)
+        foreach (var letter in letterList)
         {
-            Debug.LogError($"Буква {letter.LetterChar} не найдена в инвентаре!");
-            return;
-        }
+            if (letter == null)
+            {
+                Debug.LogError("Одна из букв в списке равна null!");
+                continue;
+            }
 
-        int inBagCount = item.Counters.InBag;
-        int onBoardCount = item.Counters.OnBoard;
-        int usedCount = item.Counters.Used;
+            var item = YG2.saves.LetterInventory.FirstOrDefault(x => x.Letter.Equals(letter));
+            if (item == null)
+            {
+                Debug.LogError($"Буква {letter.LetterChar} не найдена в инвентаре!");
+                continue;
+            }
 
-        YG2.saves.LetterInventory.Remove(item);
+            int inBagCount = item.Counters.InBag;
+            int onBoardCount = item.Counters.OnBoard;
+            int usedCount = item.Counters.Used;
 
-        var modifiedLetter = new LetterData(letter.LetterChar, letter.Points + 1, letter.Type);
+            YG2.saves.LetterInventory.Remove(item);
+
+            var modifiedLetter = new LetterData(letter.LetterChar, letter.Points + 1, letter.Type);
         
-        if (inBagCount > 0) AddLetter(modifiedLetter, LetterLocation.InBag, inBagCount);
-        if (onBoardCount > 0)
-        {
-            AddLetter(modifiedLetter, LetterLocation.OnBoard, onBoardCount);
-            OnLetterReplaced?.Invoke(letter, modifiedLetter, onBoardCount);
+            if (inBagCount > 0) AddLetter(modifiedLetter, LetterLocation.InBag, inBagCount);
+            if (onBoardCount > 0)
+            {
+                AddLetter(modifiedLetter, LetterLocation.OnBoard, onBoardCount);
+                OnLetterReplaced?.Invoke(letter, modifiedLetter, onBoardCount);
+            }
+            if (usedCount > 0) AddLetter(modifiedLetter, LetterLocation.Used, usedCount);
         }
-        if (usedCount > 0) AddLetter(modifiedLetter, LetterLocation.Used, usedCount);
     }
     
     public void DoublePointsForOneLetter(LetterData letter)
@@ -315,14 +358,89 @@ public class LetterBag
         AddLetter(wildSymbol, LetterLocation.InBag);
     }
     
-    public void AddPremiumLetterToPool(char letterChar)
+    public void AddDisposableTileToPool(char letterChar, int points)
     {
-        var points = LetterBasePoints[char.ToLower(letterChar)] + 5;
-        var letter = new LetterData(letterChar, points, LetterType.Premium);
+        // var points = LetterBasePoints[char.ToLower(letterChar)] + 5;
+        var letter = new LetterData(letterChar, points, LetterType.Disposable);
+        AddLetter(letter, LetterLocation.InBag);
+    }
+
+    public void AddRepeaterTileToPool(char letterChar, int points)
+    {
+        var letter = new LetterData(letterChar, points, LetterType.Repeater);
         AddLetter(letter, LetterLocation.InBag);
     }
     
+    public void AddNeighborMultiplierToPool(char letterChar, string direction)
+    {
+        var points = 0; // Сама по себе приносит 0 очков
     
+        LetterType multiplierType = direction.ToLower() == "left" 
+            ? LetterType.NeighborMultiplierLeft 
+            : LetterType.NeighborMultiplierRight;
+    
+        var multiplierLetter = new LetterData(letterChar, points, multiplierType);
+        AddLetter(multiplierLetter, LetterLocation.InBag);
+    
+        Debug.Log($"Добавлен множитель {direction} для буквы '{letterChar}'");
+    }
+
+    public void AddReturnLetterToPool(char letterChar)
+    {
+        var points = LetterBasePoints[char.ToLower(letterChar)];
+        var returnLetter = new LetterData(letterChar, points, LetterType.Return);
+        AddLetter(returnLetter, LetterLocation.InBag);
+    }
+    
+    public void MergeTiles(List<LetterData> lettersToMerge, int count)
+    {
+        if (lettersToMerge == null || lettersToMerge.Count != count)
+        {
+            Debug.LogError($"Неверный список букв для слияния: ожидалось {count}, получено {lettersToMerge?.Count}");
+            return;
+        }
+
+        var targetChar = lettersToMerge[0].LetterChar;
+        var totalPoints = lettersToMerge.Sum(letter => letter.Points);
+
+        // Удаляем все указанные буквы
+        foreach (var letter in lettersToMerge)
+        {
+            RemoveLetterFromAllLocations(letter, 1);
+        }
+
+        // Добавляем новую букву с суммой очков
+        var mergedLetter = new LetterData(targetChar, totalPoints, LetterType.Standard);
+        AddLetter(mergedLetter, LetterLocation.InBag);
+    
+        Debug.Log($"Слияние {count} букв '{targetChar}': создана буква стоимостью {totalPoints} очков");
+    }
+
+    public void MultiplyTiles(char letterChar, int multiplier)
+    {
+        // Найти самую дешевую версию этой буквы
+        var cheapestLetter = YG2.saves.LetterInventory
+            .Where(item => item.Letter.LetterChar == letterChar)
+            .OrderBy(item => item.Letter.Points)
+            .FirstOrDefault();
+
+        if (cheapestLetter == null)
+        {
+            Debug.LogError($"Буква '{letterChar}' не найдена");
+            return;
+        }
+
+        // Удаляем одну букву
+        RemoveLetterFromAllLocations(cheapestLetter.Letter, 1);
+
+        // Добавляем multiplier новых букв с той же стоимостью
+        for (int i = 0; i < multiplier; i++)
+        {
+            AddLetter(cheapestLetter.Letter, LetterLocation.InBag);
+        }
+    }
+
+
     // === Вспомогательные методы ===
     public int GetLetterCount(LetterData letter, LetterLocation location)
     {
@@ -349,6 +467,47 @@ public class LetterBag
             LetterLocation.InBag => YG2.saves.LetterInventory.Sum(item => item.Counters.InBag),
             _ => 0
         };
+    }
+    
+    private void RemoveLetterFromAllLocations(LetterData letter, int count)
+    {
+        var item = YG2.saves.LetterInventory.FirstOrDefault(x => x.Letter.Equals(letter));
+        if (item == null) return;
+
+        // Пытаемся удалить сначала из мешка, потом с доски, потом из использованных
+        int remaining = count;
+    
+        if (item.Counters.InBag > 0)
+        {
+            int removeFromBag = Mathf.Min(remaining, item.Counters.InBag);
+            MoveLetter(letter, LetterLocation.InBag, LetterLocation.InBag, -removeFromBag);
+            remaining -= removeFromBag;
+        }
+
+        if (remaining > 0 && item.Counters.OnBoard > 0)
+        {
+            int removeFromBoard = Mathf.Min(remaining, item.Counters.OnBoard);
+            MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.OnBoard, -removeFromBoard);
+            remaining -= removeFromBoard;
+        }
+
+        if (remaining > 0 && item.Counters.Used > 0)
+        {
+            int removeFromUsed = Mathf.Min(remaining, item.Counters.Used);
+            MoveLetter(letter, LetterLocation.Used, LetterLocation.Used, -removeFromUsed);
+            remaining -= removeFromUsed;
+        }
+
+        // Если букв не осталось, удаляем запись
+        if (item.Counters.TotalCount <= 0)
+        {
+            YG2.saves.LetterInventory.Remove(item);
+        }
+
+        if (remaining > 0)
+        {
+            Debug.LogWarning($"Не удалось удалить {remaining} букв '{letter.LetterChar}' - недостаточно экземпляров");
+        }
     }
     
     public LetterData RandomLetter()
@@ -395,5 +554,6 @@ public class LetterBag
         public int count;
         public int points;
     }
+
    
 }

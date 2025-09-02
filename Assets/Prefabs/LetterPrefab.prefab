@@ -360,6 +360,7 @@ GameObject:
   - component: {fileID: 856942800798573167}
   - component: {fileID: 7574790740663767441}
   - component: {fileID: 1848063935275778842}
+  - component: {fileID: 2263361073435048110}
   m_Layer: 5
   m_Name: LetterPrefab
   m_TagString: Untagged
@@ -486,3 +487,17 @@ MonoBehaviour:
   HomeSlot: {fileID: 0}
   letterText: {fileID: 4345614269402249663}
   pointsText: {fileID: 8418107133443780538}
+--- !u!114 &2263361073435048110
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7587824679256697026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_HorizontalFit: 0
+  m_VerticalFit: 0

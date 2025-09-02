@@ -27,28 +27,36 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
         _wordPanelManager = manager;
     }
   
-    void Start()
+    private void Start()
     {
         _image = GetComponent<Image>();
-        if (_canvas == null)
-        {
-            _canvas = GetComponentInParent<Canvas>();
-            if (_canvas == null)
-            {
-                Debug.LogError("Canvas not found!", this);
-            }
-        }
-        
+    
         Button button = GetComponent<Button>();
         if (button != null)
         {
             button.onClick.AddListener(OnLetterClick);
         }
-        else
+    
+        // Не ищем Canvas здесь, а отложим до момента использования
+    }
+
+    private void EnsureCanvas()
+    {
+        if (_canvas == null)
         {
-            Debug.LogWarning("Button component not found on LetterTile.");
+            _canvas = GetComponentInParent<Canvas>();
+            if (_canvas == null)
+            {
+                _canvas = FindAnyObjectByType<Canvas>();
+                if (_canvas == null)
+                {
+                    Debug.LogError("Canvas not found!", this);
+                    return;
+                }
+            }
         }
     }
+    
     
     public void SetLetter(LetterData newLetter)
     {
@@ -60,6 +68,7 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
         this.Letter = letter;
         letterText.text  = letter.LetterChar.ToString().ToUpper();
         pointsText.text = letter.Points.ToString();
+        letterText.text = TrimSymbols(letterText.text);
         
         switch (Letter.Type)
         {
@@ -67,9 +76,29 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
                 letterText.color = Color.red;
                 break;
             case LetterType.Final:
+                letterText.color = Color.black;
                 letterText.text +=  ".";
                 break;
-           
+            case LetterType.Disposable:
+                letterText.color = Color.green;
+                break;
+            case LetterType.Repeater:
+                letterText.color = Color.magenta;
+                break;
+            case LetterType.NeighborMultiplierLeft:
+                letterText.color = Color.black;
+                letterText.text =  "<" + letterText.text;
+                break;
+            case LetterType.NeighborMultiplierRight:
+                letterText.color = Color.black;
+                letterText.text += ">";
+                break;
+            case LetterType.Return:
+                letterText.color = Color.blue;
+                break;
+            
+            case LetterType.Standard:
+            case LetterType.Wild:
             default:
                 letterText.color = Color.black ;
                 break;
@@ -78,6 +107,14 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
     public void UpdatePoints()
     {
         pointsText.text = Letter.Points.ToString();
+    }
+
+    private string TrimSymbols(string text)
+    {
+        text = text.TrimEnd('.');
+        text = text.TrimEnd('>');
+        text = text.TrimStart('<');
+        return text;
     }
     
     public void SetScale()
@@ -183,6 +220,8 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
     public void MoveToSlot(Transform slotTransform, bool isGridSlot, Action onComplete = null)
     {
         // Отключаем кнопку во время анимации
+        EnsureCanvas();
+        
         var button = GetComponent<Button>();
         if (button) button.interactable = false;
          

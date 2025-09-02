@@ -7,11 +7,12 @@ public enum LetterType
     Standard,
     Capital,
     Final,
-    Mirrored,
-    Frozen,
-    Duplicated,
+    NeighborMultiplierLeft,
+    NeighborMultiplierRight,
+    Repeater,
+    Return,
     Wild,
-    Premium
+    Disposable
 }
 
 public class LetterData : IEquatable<LetterData>

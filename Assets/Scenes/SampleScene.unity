@@ -272,7 +272,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6033915
 RectTransform:
   m_ObjectHideFlags: 0
@@ -8491,10 +8491,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2071013131}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -184.9}
-  m_SizeDelta: {x: 950, y: 448.1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1202361033
 MonoBehaviour:
@@ -10333,7 +10333,7 @@ GameObject:
   - component: {fileID: 1578678253}
   - component: {fileID: 1578678256}
   - component: {fileID: 1578678255}
-  - component: {fileID: 1578678254}
+  - component: {fileID: 1578678257}
   m_Layer: 5
   m_Name: ScorePanel
   m_TagString: Untagged
@@ -10363,26 +10363,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -322.1}
   m_SizeDelta: {x: 470, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1578678254
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1578678252}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a9d4e2ddc6668ab4194f5c0d913d7c7a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scorePanel: {fileID: 1578678252}
-  fillRect: {fileID: 1281552900}
-  scoreText: {fileID: 1432833709}
-  letterJumpDuration: 0.5
-  bonusHighlightDuration: 0.5
-  duration: 0.5
-  overshootDuration: 0.3
-  easeType: 27
 --- !u!114 &1578678255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10421,6 +10401,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1578678252}
   m_CullTransparentMesh: 1
+--- !u!114 &1578678257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1578678252}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ed692bcce1944fba0f1a2264e2acde4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scorePanel: {fileID: 1578678252}
+  fillRect: {fileID: 1281552900}
+  scoreText: {fileID: 1432833709}
+  letterJumpDuration: 0.3
+  bonusHighlightDuration: 0.5
+  duration: 0.5
+  overshootDuration: 0.3
+  easeType: 27
 --- !u!1 &1581288978
 GameObject:
   m_ObjectHideFlags: 0
@@ -11941,7 +11941,7 @@ MonoBehaviour:
   giveUpPopup: {fileID: 516892228}
   gameWinPopup: {fileID: 1912476099}
   leaderboardManager: {fileID: 554260283}
-  scoreAnimationController: {fileID: 1578678254}
+  scoreAnimationController: {fileID: 1578678257}
 --- !u!1 &1844556188
 GameObject:
   m_ObjectHideFlags: 0
@@ -13778,8 +13778,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -25}
-  m_SizeDelta: {x: 1000.45, y: 896.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 1300, y: 700}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2071013132
 MonoBehaviour:

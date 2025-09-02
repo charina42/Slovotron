@@ -7,60 +7,44 @@
     false,
     false
   ],
-  "idSave": 74,
+  "idSave": 34,
   "CurrentImprovementOptions": [],
   "ActiveImprovements": [
     {
       "EffectType": "DifferentPoints",
       "TargetLetter": null,
       "TargetLetterChar": "0",
+      "TargetLetterPoints": "\u0000",
       "Description": "За каждую букву разной стоимости +<color=green><b>2</b></color> очка.",
       "shortDescription": "буквы разной стоимости",
       "modifier": "+2",
-      "IsMeta": true
+      "IsMeta": true,
+      "Rarity": 1
     },
     {
-      "EffectType": "ConsonantDuoBonus",
+      "EffectType": "AllDifferent",
       "TargetLetter": null,
       "TargetLetterChar": "0",
-      "Description": "За каждые две подряд идущие согласные в слове +<color=green><b>5</b></color> очков.",
-      "shortDescription": "две согдасные подряд",
-      "modifier": "+5",
-      "IsMeta": true
+      "TargetLetterPoints": "\u0000",
+      "Description": "Если все буквы в слове - разные, очки за это слово умножаются на <color=green><b>2</b></color>.",
+      "shortDescription": "все буквы разные",
+      "modifier": "x1.5",
+      "IsMeta": true,
+      "Rarity": 1
     },
     {
       "EffectType": "VowelDuoBonus",
       "TargetLetter": null,
       "TargetLetterChar": "0",
+      "TargetLetterPoints": "\u0000",
       "Description": "За каждые две подряд идущие гласные в слове +<color=green><b>5</b></color> очков.",
       "shortDescription": "две гласные подряд",
       "modifier": "+5",
-      "IsMeta": true
-    },
-    {
-      "EffectType": "ConsonantComboBonus",
-      "TargetLetter": null,
-      "TargetLetterChar": "0",
-      "Description": "За каждые три подряд идущие согласные в слове +<color=green><b>10</b></color> очков.",
-      "shortDescription": "три согласные подряд",
-      "modifier": "+10",
-      "IsMeta": true
+      "IsMeta": true,
+      "Rarity": 0
     }
   ],
   "LetterInventory": [
-    {
-      "Letter": {
-        "LetterChar": "а",
-        "Points": 1,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
     {
       "Letter": {
         "LetterChar": "б",
@@ -68,23 +52,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
-        "OnBoard": 1,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "в",
-        "Points": 1,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
+        "InBag": 2,
         "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
+        "Used": 0,
+        "TotalCount": 2
       }
     },
     {
@@ -94,10 +65,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 1,
         "Used": 0,
-        "TotalCount": 1
+        "TotalCount": 2
       }
     },
     {
@@ -154,28 +125,15 @@
     },
     {
       "Letter": {
-        "LetterChar": "и",
-        "Points": 1,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 2,
-        "Used": 1,
-        "TotalCount": 4
-      }
-    },
-    {
-      "Letter": {
         "LetterChar": "й",
         "Points": 10,
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -185,10 +143,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 1,
+        "InBag": 2,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 1
+        "TotalCount": 2
       }
     },
     {
@@ -198,10 +156,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -211,21 +169,21 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
+        "InBag": 0,
+        "OnBoard": 1,
         "Used": 0,
         "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "о",
+        "LetterChar": "н",
         "Points": 1,
         "Type": 0
       },
       "Counters": {
-        "InBag": 1,
-        "OnBoard": 1,
+        "InBag": 2,
+        "OnBoard": 0,
         "Used": 0,
         "TotalCount": 2
       }
@@ -239,21 +197,21 @@
       "Counters": {
         "InBag": 1,
         "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 2
+        "Used": 0,
+        "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "т",
+        "LetterChar": "с",
         "Points": 1,
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -264,9 +222,9 @@
       },
       "Counters": {
         "InBag": 0,
-        "OnBoard": 0,
+        "OnBoard": 1,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -276,10 +234,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -289,10 +247,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -341,10 +299,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -367,10 +325,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 2,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 2
       }
     },
     {
@@ -393,62 +351,23 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
-        "Used": 1,
+        "Used": 0,
         "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "б",
-        "Points": 4,
+        "LetterChar": "с",
+        "Points": 2,
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 3,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "а",
-        "Points": 2,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 1,
-        "Used": 1,
         "TotalCount": 3
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "р",
-        "Points": 2,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 2,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 3
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ь",
-        "Points": 6,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 1,
-        "Used": 1,
-        "TotalCount": 2
       }
     },
     {
@@ -458,23 +377,10 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 3,
+        "InBag": 4,
         "OnBoard": 0,
-        "Used": 2,
-        "TotalCount": 5
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ы",
-        "Points": 5,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
+        "Used": 0,
+        "TotalCount": 4
       }
     },
     {
@@ -497,42 +403,16 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ж",
-        "Points": 6,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
+        "InBag": 6,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 6
       }
     },
     {
       "Letter": {
-        "LetterChar": "п",
-        "Points": 3,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ш",
-        "Points": 7,
+        "LetterChar": "ю",
+        "Points": 6,
         "Type": 0
       },
       "Counters": {
@@ -544,67 +424,41 @@
     },
     {
       "Letter": {
-        "LetterChar": "ц",
-        "Points": 9,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 0
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "я",
-        "Points": 4,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 0
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ц",
-        "Points": 10,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 0
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "с",
+        "LetterChar": "р",
         "Points": 2,
         "Type": 0
+      },
+      "Counters": {
+        "InBag": 3,
+        "OnBoard": 2,
+        "Used": 0,
+        "TotalCount": 5
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "а",
+        "Points": 2,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 4,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 4
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "й",
+        "Points": 10,
+        "Type": 6
       },
       "Counters": {
         "InBag": 2,
-        "OnBoard": 1,
-        "Used": 0,
-        "TotalCount": 3
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "т",
-        "Points": 2,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
         "OnBoard": 0,
-        "Used": 2,
-        "TotalCount": 3
+        "Used": 0,
+        "TotalCount": 2
       }
     },
     {
@@ -614,29 +468,16 @@
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 3,
-        "TotalCount": 3
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "*",
-        "Points": 0,
-        "Type": 6
-      },
-      "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "х",
-        "Points": 6,
+        "LetterChar": "н",
+        "Points": 2,
         "Type": 0
       },
       "Counters": {
@@ -648,67 +489,41 @@
     },
     {
       "Letter": {
-        "LetterChar": "и",
-        "Points": 2,
-        "Type": 0
+        "LetterChar": "р",
+        "Points": 0,
+        "Type": 5
       },
       "Counters": {
         "InBag": 1,
-        "OnBoard": 1,
-        "Used": 0,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "б",
-        "Points": 5,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "а",
+        "LetterChar": "д",
         "Points": 3,
         "Type": 0
       },
       "Counters": {
         "InBag": 1,
         "OnBoard": 0,
-        "Used": 2,
-        "TotalCount": 3
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "О",
-        "Points": 1,
-        "Type": 1
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 1,
         "Used": 0,
         "TotalCount": 1
       }
     },
     {
       "Letter": {
-        "LetterChar": "ю",
-        "Points": 7,
+        "LetterChar": "ы",
+        "Points": 5,
         "Type": 0
       },
       "Counters": {
-        "InBag": 0,
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
       }
     },
     {
@@ -726,74 +541,9 @@
     },
     {
       "Letter": {
-        "LetterChar": "р",
+        "LetterChar": "с",
         "Points": 3,
         "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "С",
-        "Points": 1,
-        "Type": 2
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "к",
-        "Points": 3,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "д",
-        "Points": 3,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 1,
-        "Used": 0,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ф",
-        "Points": 9,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "*",
-        "Points": 1,
-        "Type": 6
       },
       "Counters": {
         "InBag": 0,
@@ -804,9 +554,48 @@
     },
     {
       "Letter": {
-        "LetterChar": "у",
-        "Points": 3,
+        "LetterChar": "ю",
+        "Points": 7,
         "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 1,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "ж",
+        "Points": 6,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 0
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "т",
+        "Points": 2,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 3,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 3
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "б",
+        "Points": 0,
+        "Type": 3
       },
       "Counters": {
         "InBag": 1,
@@ -817,15 +606,93 @@
     },
     {
       "Letter": {
-        "LetterChar": "С",
+        "LetterChar": "п",
+        "Points": 3,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 2,
+        "Used": 0,
+        "TotalCount": 3
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "о",
+        "Points": 3,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 2
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "и",
         "Points": 2,
-        "Type": 2
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 3,
+        "OnBoard": 2,
+        "Used": 0,
+        "TotalCount": 5
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "с",
+        "Points": 0,
+        "Type": 5
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "е",
+        "Points": 0,
+        "Type": 5
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "к",
+        "Points": 3,
+        "Type": 0
       },
       "Counters": {
         "InBag": 0,
-        "OnBoard": 1,
-        "Used": 0,
+        "OnBoard": 0,
+        "Used": 1,
         "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "с",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 0
       }
     },
     {
@@ -843,151 +710,34 @@
     },
     {
       "Letter": {
-        "LetterChar": "л",
-        "Points": 4,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
         "LetterChar": "н",
         "Points": 3,
         "Type": 0
       },
       "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "я",
-        "Points": 5,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "щ",
-        "Points": 9,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
+        "InBag": 2,
         "OnBoard": 0,
         "Used": 1,
-        "TotalCount": 1
+        "TotalCount": 3
       }
     },
     {
       "Letter": {
-        "LetterChar": "е",
-        "Points": 3,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 1,
-        "Used": 0,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ж",
-        "Points": 7,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "н",
-        "Points": 4,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 4,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 5
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ц",
-        "Points": 11,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "ю",
-        "Points": 8,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "о",
-        "Points": 3,
-        "Type": 0
+        "LetterChar": "О",
+        "Points": 1,
+        "Type": 1
       },
       "Counters": {
         "InBag": 0,
         "OnBoard": 0,
-        "Used": 4,
-        "TotalCount": 4
+        "Used": 0,
+        "TotalCount": 0
       }
     },
     {
       "Letter": {
-        "LetterChar": "с",
+        "LetterChar": "у",
         "Points": 3,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 2,
-        "TotalCount": 2
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "к",
-        "Points": 4,
         "Type": 0
       },
       "Counters": {
@@ -1000,32 +750,32 @@
     {
       "Letter": {
         "LetterChar": "а",
-        "Points": 4,
+        "Points": 3,
         "Type": 0
       },
       "Counters": {
         "InBag": 0,
+        "OnBoard": 1,
+        "Used": 2,
+        "TotalCount": 3
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "е",
+        "Points": 3,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 2,
         "OnBoard": 0,
         "Used": 1,
-        "TotalCount": 1
+        "TotalCount": 3
       }
     },
     {
       "Letter": {
-        "LetterChar": "й",
-        "Points": 11,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 1,
-        "OnBoard": 0,
-        "Used": 0,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "р",
+        "LetterChar": "я",
         "Points": 4,
         "Type": 0
       },
@@ -1038,20 +788,72 @@
     },
     {
       "Letter": {
-        "LetterChar": "*",
-        "Points": 2,
-        "Type": 6
+        "LetterChar": "Ь",
+        "Points": 5,
+        "Type": 2
       },
       "Counters": {
         "InBag": 0,
+        "OnBoard": 1,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "О",
+        "Points": 2,
+        "Type": 1
+      },
+      "Counters": {
+        "InBag": 1,
         "OnBoard": 0,
         "Used": 0,
-        "TotalCount": 0
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "ш",
+        "Points": 7,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "и",
+        "Points": 3,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 1,
+        "Used": 0,
+        "TotalCount": 1
       }
     },
     {
       "Letter": {
         "LetterChar": "к",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "с",
         "Points": 5,
         "Type": 0
       },
@@ -1077,45 +879,6 @@
     },
     {
       "Letter": {
-        "LetterChar": "г",
-        "Points": 4,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "*",
-        "Points": 3,
-        "Type": 6
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
-        "LetterChar": "б",
-        "Points": 6,
-        "Type": 0
-      },
-      "Counters": {
-        "InBag": 0,
-        "OnBoard": 0,
-        "Used": 1,
-        "TotalCount": 1
-      }
-    },
-    {
-      "Letter": {
         "LetterChar": "у",
         "Points": 4,
         "Type": 0
@@ -1126,12 +889,103 @@
         "Used": 1,
         "TotalCount": 1
       }
+    },
+    {
+      "Letter": {
+        "LetterChar": "ж",
+        "Points": 7,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "л",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "д",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "ы",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 2,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 2
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "ц",
+        "Points": 9,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "а",
+        "Points": 4,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 0,
+        "OnBoard": 0,
+        "Used": 1,
+        "TotalCount": 1
+      }
+    },
+    {
+      "Letter": {
+        "LetterChar": "в",
+        "Points": 3,
+        "Type": 0
+      },
+      "Counters": {
+        "InBag": 1,
+        "OnBoard": 0,
+        "Used": 0,
+        "TotalCount": 1
+      }
     }
   ],
-  "currentRound": 4,
-  "confirmedWordsCount": 2,
-  "roundScore": 59,
-  "lastLetterOfPreviousWord": "с",
+  "currentRound": 3,
+  "confirmedWordsCount": 3,
+  "roundScore": 92,
+  "lastLetterOfPreviousWord": "а",
   "wordChainCount": 0,
-  "TotalScore": 407
+  "TotalScore": 268
 }

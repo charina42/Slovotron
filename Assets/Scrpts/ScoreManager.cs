@@ -29,11 +29,19 @@ public class ScoreManager
             foreach (var letter in LetterScores)
             {
                 desc += $"- {letter.Letter.LetterChar}: {letter.Points} очков";
+                if (letter.IsRepeater) desc += " (повторитель)";
                 if (letter.IsCapital) desc += " (заглавная)";
                 if (letter.IsFinal) desc += " (финальная)";
+                if (letter.Letter != null)
+                {
+                    if (letter.Letter.Type == LetterType.NeighborMultiplierLeft) 
+                        desc += " (множитель Left)";
+                    if (letter.Letter.Type == LetterType.NeighborMultiplierRight) 
+                        desc += " (множитель Right)";
+                }
                 desc += "\n";
             }
-    
+
             if (BonusScores.Count > 0)
             {
                 desc += "Бонусы:\n";
@@ -42,15 +50,15 @@ public class ScoreManager
                     string bonusDesc = bonus.IsFromImprovement ? 
                         $"+{bonus.Points} ({bonus.SourceImprovement.shortDescription})" :
                         $"+{bonus.Points} ({bonus.Description})";
-            
+        
                     desc += bonusDesc;
-            
+        
                     if (bonus.IsFromImprovement && !string.IsNullOrEmpty(bonus.SourceImprovement.EffectType))
                         desc += $" [Улучшение: {bonus.SourceImprovement.EffectType}]";
                     desc += "\n";
                 }
             }
-    
+
             desc += $"Итого: {WordScore} очков";
             return desc;
         }
@@ -62,6 +70,9 @@ public class ScoreManager
         public int Points { get; set; }
         public bool IsCapital { get; set; }
         public bool IsFinal { get; set; }
+        public bool IsRepeater { get; set; }
+        // public bool IsNeighborMultiplierLeft => Letter?.Type == LetterType.NeighborMultiplierLeft;
+        // public bool IsNeighborMultiplierRight => Letter?.Type == LetterType.NeighborMultiplierRight;
     }
 
     public class BonusScore
@@ -96,17 +107,12 @@ public class ScoreManager
     
     private static readonly char[] Vowels = { 'а', 'е', 'ё', 'и', 'о', 'у', 'ы', 'э', 'ю', 'я' };
 
-    public void Initialize(LetterBag letterBag, ImprovementSystem improvementSystem)
-    {
-        // _letterBag = letterBag;
-        // _improvementSystem = improvementSystem;
-    }
-
     public ScoreResult CalculateWordScore(List<LetterData> letterDataList)
     {
         var result = new ScoreResult();
-        string word = BuildWord(letterDataList);
-        
+        var word = string.Concat(letterDataList.Select(l => l.LetterChar));
+    
+        // Сначала собираем базовые очки букв
         foreach (var letter in letterDataList)
         {
             result.LetterScores.Add(new LetterScore
@@ -114,11 +120,19 @@ public class ScoreManager
                 Letter = letter,
                 Points = letter.Points,
                 IsCapital = letter.Type == LetterType.Capital,
-                IsFinal = letter.Type == LetterType.Final
+                IsFinal = letter.Type == LetterType.Final,
+                IsRepeater = letter.Type == LetterType.Repeater
             });
         }
+    
+        // Применяем множители соседей
+        ApplyNeighborMultipliers(result, letterDataList);
+    
+        // Обрабатываем буквы-повторители
+        ProcessRepeaterLetters(result, letterDataList);
+    
         result.WordScore = result.LetterScores.Sum(l => l.Points);
-        
+    
         // Бонусы за специальные буквы
         if (letterDataList[0].Type == LetterType.Capital)
         {
@@ -135,35 +149,90 @@ public class ScoreManager
                 5));
             result.WordScore += 5;
         }
-        
+    
         ApplyBonuses(result, word, letterDataList);
-        
+    
         UpdateWordChain(word);
-        
+    
         Debug.Log(result.GetFullDescription(word));
         return result;
     }
-
-    private string BuildWord(List<LetterData> letters)
+    
+    private void ProcessRepeaterLetters(ScoreResult result, List<LetterData> letterDataList)
     {
-        return string.Concat(letters.Select(l => l.LetterChar));
+        // Находим все буквы-повторители
+        var repeaterLetters = letterDataList
+            .Where(l => l.Type == LetterType.Repeater)
+            .ToList();
+
+        foreach (var repeater in repeaterLetters)
+        {
+            // Находим индекс этой буквы в результате
+            var repeaterScore = result.LetterScores
+                .FirstOrDefault(ls => ls.Letter == repeater);
+                
+            if (repeaterScore != null)
+            {
+                // Считаем количество таких же букв в слове (включая саму себя)
+                int sameLetterCount = letterDataList
+                    .Count(l => l.LetterChar == repeater.LetterChar);
+                    
+                // Умножаем очки повторителя на количество одинаковых букв
+                repeaterScore.Points = repeater.Points * sameLetterCount;
+            }
+        }
     }
 
-    // private int CalculateBaseScore(List<LetterData> letters)
-    // {
-    //     
-    //     int score = letters.Sum(l => l.Points);
-    //     
-    //     if (letters[0].Type == LetterType.Capital)
-    //         score += 10;
-    //     
-    //     if (letters[^1].Type == LetterType.Final)
-    //         score += 10;
-    //         
-    //     return score;
-    // }
+    private void ApplyNeighborMultipliers(ScoreResult result, List<LetterData> letterDataList)
+    {
+        var baseScores = result.LetterScores.ToList();
 
-    private void ApplyBonuses(ScoreResult result, string word, List<LetterData> letters)
+        for (int i = 0; i < letterDataList.Count; i++)
+        {
+            var letter = letterDataList[i];
+            var letterScore = result.LetterScores[i];
+
+            if (letter.Type == LetterType.NeighborMultiplierLeft && i > 0)
+            {
+                // Умножаем левую соседнюю букву
+                var leftNeighborScore = result.LetterScores[i - 1];
+                int originalPoints = leftNeighborScore.Points;
+                leftNeighborScore.Points *= 2;
+
+                // Добавляем информацию о бонусе
+                result.BonusScores.Add(BonusScore.CreateBaseBonus(
+                    $"Множитель Left: буква '{leftNeighborScore.Letter.LetterChar}' удвоена",
+                    originalPoints)); // Бонус равен исходной стоимости буквы
+
+                Debug.Log(
+                    $"Множитель Left: буква '{leftNeighborScore.Letter.LetterChar}' удвоена с {originalPoints} до {leftNeighborScore.Points}");
+            }
+            else if (letter.Type == LetterType.NeighborMultiplierRight && i < letterDataList.Count - 1)
+            {
+                // Умножаем правую соседнюю букву
+                var rightNeighborScore = result.LetterScores[i + 1];
+                int originalPoints = rightNeighborScore.Points;
+                rightNeighborScore.Points *= 2;
+
+                // Добавляем информацию о бонусе
+                result.BonusScores.Add(BonusScore.CreateBaseBonus(
+                    $"Множитель Right: буква '{rightNeighborScore.Letter.LetterChar}' удвоена",
+                    originalPoints)); // Бонус равен исходной стоимости буквы
+
+                Debug.Log(
+                    $"Множитель Right: буква '{rightNeighborScore.Letter.LetterChar}' удвоена с {originalPoints} до {rightNeighborScore.Points}");
+            }
+
+            // Буквы-множители сами по себе приносят 0 очков
+            if (letter.Type == LetterType.NeighborMultiplierLeft ||
+                letter.Type == LetterType.NeighborMultiplierRight)
+            {
+                letterScore.Points = 0;
+            }
+        }
+    }
+
+    private static void ApplyBonuses(ScoreResult result, string word, List<LetterData> letters)
     {
         foreach (var improvement in YG2.saves.ActiveImprovements)
         {
@@ -204,7 +273,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyVowelFirstBonus(ImprovementOption improvement, ScoreResult result, string word)
+    private static void ApplyVowelFirstBonus(ImprovementOption improvement, ScoreResult result, string word)
     {
         if (Vowels.Contains(char.ToLower(word[0])))
         {
@@ -214,7 +283,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyConsonantComboBonus(ImprovementOption improvement, ScoreResult result, string word, int minCombo, int bonusPerCombo)
+    private static void ApplyConsonantComboBonus(ImprovementOption improvement, ScoreResult result, string word, int minCombo, int bonusPerCombo)
     {
         int combos = CountLetterCombos(word, isVowel: false, minCombo);
         if (combos > 0)
@@ -226,7 +295,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyVowelComboBonus(ImprovementOption improvement, ScoreResult result, string word)
+    private static void ApplyVowelComboBonus(ImprovementOption improvement, ScoreResult result, string word)
     {
         int combos = CountLetterCombos(word, isVowel: true, minCombo: 2);
         if (combos > 0)
@@ -238,7 +307,7 @@ public class ScoreManager
         }
     }
 
-    private int CountLetterCombos(string word, bool isVowel, int minCombo)
+    private static int CountLetterCombos(string word, bool isVowel, int minCombo)
     {
         int combos = 0;
         int currentCombo = 0;
@@ -261,7 +330,7 @@ public class ScoreManager
         return combos;
     }
 
-    private void ApplyDifferentPointsBonus(ImprovementOption improvement, ScoreResult result, List<LetterData> letters)
+    private static void ApplyDifferentPointsBonus(ImprovementOption improvement, ScoreResult result, List<LetterData> letters)
     {
         int uniquePoints = letters.GroupBy(l => l.Points).Count();
         if (uniquePoints > 1)
@@ -273,7 +342,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyAllDifferentBonus(ImprovementOption improvement, ScoreResult result, string word)
+    private static void ApplyAllDifferentBonus(ImprovementOption improvement, ScoreResult result, string word)
     {
         if (word.Distinct().Count() == word.Length)
         {
@@ -284,7 +353,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyMirrorWordBonus(ImprovementOption improvement, ScoreResult result, string word)
+    private static void ApplyMirrorWordBonus(ImprovementOption improvement, ScoreResult result, string word)
     {
         if (word.Length > 1 && char.ToLower(word[0]) == char.ToLower(word[^1]))
         {
@@ -295,7 +364,7 @@ public class ScoreManager
         }
     }
 
-    private void ApplyWordChainBonus(ImprovementOption improvement, ScoreResult result, string word)
+    private static void ApplyWordChainBonus(ImprovementOption improvement, ScoreResult result, string word)
     {
         if (char.ToLower(word[0]) == char.ToLower(YG2.saves.lastLetterOfPreviousWord))
         {
@@ -317,12 +386,4 @@ public class ScoreManager
         YG2.saves.lastLetterOfPreviousWord = word[^1];
     }
 
-    public void ResetScore()
-    {
-        // _totalScore = 0;
-        YG2.saves.wordChainCount = 0;
-        YG2.saves.lastLetterOfPreviousWord = ' ';
-    }
-
-    // public int GetCurrentScore() => _totalScore;
 }

@@ -1,4 +1,4 @@
-using DG.Tweening;
+﻿using DG.Tweening;
 using UnityEngine;
 using TMPro;
 using System.Collections.Generic;
@@ -28,8 +28,11 @@ public class ScoreAnimationController : MonoBehaviour
     [SerializeField] private Ease easeType = Ease.OutBack;
     
     private float _totalScoreWidthRatio;
-    private int _accumulatedScore; // Накопленный счет
+    private int _accumulatedScore;
     private int _currentScore;
+    private float _currentTime;
+    private float _accumulatedWidth;
+    private Sequence _animationSequence;
     
     public event System.Action OnAnimationStart;
     public event System.Action OnAnimationComplete;
@@ -44,145 +47,210 @@ public class ScoreAnimationController : MonoBehaviour
 
     public void StartAnimation(ScoreManager.ScoreResult scoreData)
     {
+        InitializeAnimation(scoreData);
+        
+        AnimateLetters(scoreData);
+        AnimateSpecialLetterBonuses(scoreData);
+        AnimateImprovementBonuses(scoreData);
+        
+        CompleteAnimation();
+    }
+
+    private void InitializeAnimation(ScoreManager.ScoreResult scoreData)
+    {
         scorePanel.SetActive(true);
         OnAnimationStart?.Invoke();
         ResetBar();
 
         _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.WordScore;
         _accumulatedScore = 0;
+        _currentScore = 0;
+        _currentTime = 0.3f;
+        _accumulatedWidth = MinWidth;
+        _animationSequence = DOTween.Sequence();
+        
         scoreText.text = "0";
+    }
 
-        Sequence animationSequence = DOTween.Sequence();
-        float currentTime = 0.3f;
-        float accumulatedWidth = MinWidth;
-
-        // Сначала анимируем все буквы
+    private void AnimateLetters(ScoreManager.ScoreResult scoreData)
+    {
         for (int i = 0; i < scoreData.LetterScores.Count; i++)
         {
             var letterData = scoreData.LetterScores[i];
-            int index = i;
-            _currentScore = 0;
-            int letterPoints = letterData.Points;
-            _accumulatedScore += letterData.Points;
-
-            animationSequence.InsertCallback(currentTime,
-                () => AnimateLetter(letterData.Letter, index, letterJumpDuration));
-
-            animationSequence.InsertCallback(currentTime, () =>
+            
+            if (letterData.IsRepeater)
             {
-                _currentScore += letterPoints;
-                scoreText.text = _currentScore.ToString();
-            });
-
-            float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
-
-            // Анимация шкалы
-            animationSequence.Insert(currentTime,
-                DOTween.To(() => accumulatedWidth,
-                        x =>
-                        {
-                            accumulatedWidth = x;
-                            fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
-                        },
-                        targetWidth,
-                        letterJumpDuration)
-                    .SetEase(easeType));
-
-            currentTime += letterJumpDuration;
-            accumulatedWidth = targetWidth;
+                AnimateRepeaterLetter(letterData, i, scoreData);
+            }
+            else
+            {
+                AnimateRegularLetter(letterData, i);
+            }
         }
+    }
 
-        // Затем анимируем бонусы за особые буквы (Capital и Final)
-        foreach (var bonus in scoreData.BonusScores)
+    private void AnimateRegularLetter(ScoreManager.LetterScore letterData, int index)
+    {
+        int letterPoints = letterData.Points;
+        _accumulatedScore += letterPoints;
+
+        AddLetterAnimation(letterData.Letter, index, letterPoints);
+        AnimateProgressBar(_currentTime, letterJumpDuration);
+
+        _currentTime += letterJumpDuration;
+    }
+
+    private void AnimateRepeaterLetter(ScoreManager.LetterScore repeaterData, int repeaterIndex, ScoreManager.ScoreResult scoreData)
+    {
+        var sameLetters = scoreData.LetterScores
+            .Where(l => l.Letter.LetterChar == repeaterData.Letter.LetterChar)
+            .ToList();
+        int repeaterPoints = repeaterData.Points;
+
+        // Анимируем сам повторитель
+        _accumulatedScore += repeaterPoints;
+        AddLetterAnimation(repeaterData.Letter, repeaterIndex, repeaterPoints);
+        AnimateProgressBar(_currentTime, letterJumpDuration);
+
+        // Анимируем все одинаковые буквы одновременно с повторителем
+        foreach (var sameLetter in sameLetters)
         {
-            // Обрабатываем только базовые бонусы за особые буквы
-            if (!bonus.IsFromImprovement &&
-                (bonus.Description == "CapitalLetter" || bonus.Description == "FinalLetter"))
+            if (sameLetter != repeaterData)
             {
-                // Находим соответствующую букву для анимации
-                var letterScore = bonus.Description == "CapitalLetter"
-                    ? scoreData.LetterScores.FirstOrDefault(l => l.IsCapital)
-                    : scoreData.LetterScores.FirstOrDefault(l => l.IsFinal);
-
-                if (letterScore != null)
-                {
-                    int letterIndex = scoreData.LetterScores.IndexOf(letterScore);
-                    int bonusPoints = bonus.Points;
-
-                    animationSequence.InsertCallback(currentTime, () =>
-                    {
-                        // Анимация прыжка буквы
-                        _wordPanelManager.PlayLetterAnimation(letterScore.Letter, letterIndex, letterJumpDuration);
-
-                        // Подсветка бонуса
-                        _improvementPanel.HighlightImprovement(bonus.Description, bonusHighlightDuration);
-                    });
-
-                    _accumulatedScore += bonusPoints;
-
-                    animationSequence.InsertCallback(currentTime, () =>
-                    {
-                        _currentScore += bonusPoints;
-                        scoreText.text = _currentScore.ToString();
-                    });
-
-                    float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
-
-                    animationSequence.Insert(currentTime,
-                        DOTween.To(() => accumulatedWidth,
-                                x =>
-                                {
-                                    accumulatedWidth = x;
-                                    fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
-                                },
-                                targetWidth,
-                                letterJumpDuration)
-                            .SetEase(easeType));
-
-                    currentTime += letterJumpDuration;
-                    accumulatedWidth = targetWidth;
-                }
+                var sameLetterIndex = scoreData.LetterScores.IndexOf(sameLetter);
+                AddSimultaneousLetterAnimation(sameLetter.Letter, sameLetterIndex, repeaterPoints);
+                
+                var simultaneousTime = _currentTime - letterJumpDuration;
+                AnimateProgressBar(simultaneousTime, letterJumpDuration);
             }
         }
 
-        // Затем анимируем остальные бонусы (улучшения)
-        foreach (var bonus in scoreData.BonusScores)
+        _currentTime += letterJumpDuration;
+    }
+    
+
+    private void AddLetterAnimation(LetterData letter, int position, int points)
+    {
+        _animationSequence.InsertCallback(_currentTime, () => 
+            AnimateLetter(letter, position, letterJumpDuration));
+        
+        _animationSequence.InsertCallback(_currentTime, () => 
+            UpdateScoreDisplay(points));
+    }
+
+    private void AddSimultaneousLetterAnimation(LetterData letter, int position, int points)
+    {
+        var simultaneousTime = _currentTime - letterJumpDuration;
+        
+        _animationSequence.InsertCallback(simultaneousTime, () => 
+            AnimateLetter(letter, position, letterJumpDuration));
+        
+        _animationSequence.InsertCallback(simultaneousTime, () => 
+            UpdateScoreDisplay(points));
+    }
+
+    private void AnimateProgressBar(float startTime, float animDuration)
+    {
+        var targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
+        
+        _animationSequence.Insert(startTime,
+            DOTween.To(() => _accumulatedWidth,
+                    UpdateProgressBarWidth,
+                    targetWidth,
+                    animDuration)
+                .SetEase(easeType));
+        
+        _accumulatedWidth = targetWidth;
+    }
+
+    private void UpdateProgressBarWidth(float width)
+    {
+        _accumulatedWidth = width;
+        fillRect.sizeDelta = new Vector2(width, fillRect.sizeDelta.y);
+    }
+
+    private void UpdateScoreDisplay(int points)
+    {
+        _currentScore += points;
+        scoreText.text = _currentScore.ToString();
+    }
+
+    private void AnimateSpecialLetterBonuses(ScoreManager.ScoreResult scoreData)
+    {
+        foreach (var bonus in scoreData.BonusScores.Where(bonus => IsSpecialLetterBonus(bonus)))
         {
-            // Пропускаем уже обработанные базовые бонусы
-            if (!bonus.IsFromImprovement &&
-                (bonus.Description == "CapitalLetter" || bonus.Description == "FinalLetter"))
-                continue;
-
-            var improvementType = bonus.IsFromImprovement ? bonus.SourceImprovement.EffectType : bonus.Description;
-            animationSequence.InsertCallback(currentTime, () => ShowBonus(improvementType, bonus.Points));
-
-            _accumulatedScore += bonus.Points;
-            int bonusPoints = bonus.Points;
-
-            animationSequence.InsertCallback(currentTime, () =>
-            {
-                _currentScore += bonusPoints;
-                scoreText.text = _currentScore.ToString();
-            });
-
-            float targetWidth = MinWidth + (_accumulatedScore * _totalScoreWidthRatio);
-
-            animationSequence.Insert(currentTime,
-                DOTween.To(() => accumulatedWidth,
-                        x =>
-                        {
-                            accumulatedWidth = x;
-                            fillRect.sizeDelta = new Vector2(x, fillRect.sizeDelta.y);
-                        },
-                        targetWidth,
-                        bonusHighlightDuration)
-                    .SetEase(easeType));
-
-            currentTime += bonusHighlightDuration;
-            accumulatedWidth = targetWidth;
+            AnimateSpecialLetterBonus(bonus, scoreData);
         }
+    }
 
-        animationSequence.OnComplete(() =>
+    private static bool IsSpecialLetterBonus(ScoreManager.BonusScore bonus)
+    {
+        return !bonus.IsFromImprovement && 
+               (bonus.Description == "CapitalLetter" || bonus.Description == "FinalLetter");
+    }
+
+    private void AnimateSpecialLetterBonus(ScoreManager.BonusScore bonus, ScoreManager.ScoreResult scoreData)
+    {
+        var letterScore = bonus.Description == "CapitalLetter"
+            ? scoreData.LetterScores.FirstOrDefault(l => l.IsCapital)
+            : scoreData.LetterScores.FirstOrDefault(l => l.IsFinal);
+
+        if (letterScore == null) return;
+        var letterIndex = scoreData.LetterScores.IndexOf(letterScore);
+        var bonusPoints = bonus.Points;
+
+        AddSpecialLetterAnimation(letterScore.Letter, letterIndex);
+        UpdateScoreWithBonus(bonusPoints);
+        AnimateProgressBar(_currentTime, letterJumpDuration);
+
+        _currentTime += letterJumpDuration;
+    }
+
+    private void AddSpecialLetterAnimation(LetterData letter, int position)
+    {
+        _animationSequence.InsertCallback(_currentTime, () =>
+            _wordPanelManager.PlayLetterAnimation(letter, position, letterJumpDuration));
+    }
+
+    private void AnimateImprovementBonuses(ScoreManager.ScoreResult scoreData)
+    {
+        foreach (var bonus in scoreData.BonusScores.Where(bonus => !IsSpecialLetterBonus(bonus)))
+        {
+            AnimateImprovementBonus(bonus);
+        }
+    }
+
+    private void AnimateImprovementBonus(ScoreManager.BonusScore bonus)
+    {
+        var bonusType = bonus.IsFromImprovement 
+            ? bonus.SourceImprovement.EffectType 
+            : bonus.Description;
+
+        var bonusPoints = bonus.Points;
+        _accumulatedScore += bonusPoints;
+
+        AddBonusHighlight(bonusType);
+        UpdateScoreWithBonus(bonusPoints);
+        AnimateProgressBar(_currentTime, bonusHighlightDuration);
+
+        _currentTime += bonusHighlightDuration;
+    }
+
+    private void AddBonusHighlight(string bonusType)
+    {
+        _animationSequence.InsertCallback(_currentTime, () => 
+            ShowBonus(bonusType)); // Points передаются отдельно
+    }
+
+    private void UpdateScoreWithBonus(int bonusPoints)
+    {
+        _animationSequence.InsertCallback(_currentTime, () => 
+            UpdateScoreDisplay(bonusPoints));
+    }
+
+    private void CompleteAnimation()
+    {
+        _animationSequence.OnComplete(() =>
         {
             scoreText.text = _accumulatedScore.ToString();
             OnAnimationComplete?.Invoke();
@@ -203,7 +271,7 @@ public class ScoreAnimationController : MonoBehaviour
         _wordPanelManager.PlayLetterAnimation(letter, position, duration);
     }
 
-    private void ShowBonus(string bonusType, int points)
+    private void ShowBonus(string bonusType)
     {
         _improvementPanel.HighlightImprovement(bonusType, bonusHighlightDuration);
     }

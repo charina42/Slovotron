@@ -32,7 +32,7 @@ public class Bootstrapper : MonoBehaviour
         
         
         // Связываем зависимости
-        Services.Score.Initialize(Services.LetterBag, Services.ImprovementSystem);
+        // Services.Score.Initialize(Services.LetterBag, Services.ImprovementSystem);
         
         wordPanelManager.Initialize();
         leaderboardManager.Initialize(Services.MetaGameData);
