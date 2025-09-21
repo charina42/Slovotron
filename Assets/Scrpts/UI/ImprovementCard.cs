@@ -161,8 +161,15 @@ public class ImprovementCard : MonoBehaviour, IPointerClickHandler
             // Для AddOnePointTo8 показываем только итоговые буквы
             if (option.EffectType == "AddOnePointTo8")
             {
-                CreateHorizontalGroup(option.TargetLetter, 
-                    letter => CreateLetterTile(new LetterData(letter.LetterChar, letter.Points + 1, letter.Type)));
+                // Создаем вертикальную группу для двух строк
+                CreateVerticalGroup(
+                    // Верхняя строка: первые 4 буквы
+                    () => CreateHorizontalGroup(option.TargetLetter.Take(4).ToList(), 
+                        letter => CreateLetterTile(new LetterData(letter.LetterChar, letter.Points + 1, letter.Type))),
+                    // Нижняя строка: последние 4 буквы
+                    () => CreateHorizontalGroup(option.TargetLetter.Skip(4).Take(4).ToList(), 
+                        letter => CreateLetterTile(new LetterData(letter.LetterChar, letter.Points + 1, letter.Type)))
+                );
             }
             else
             {
@@ -265,67 +272,48 @@ public class ImprovementCard : MonoBehaviour, IPointerClickHandler
 
     // Создает вертикальную группу с разделителем-стрелкой
     private void CreateVerticalGroup(System.Action createTopRow, System.Action createBottomRow)
-{
-    // var verticalGroup = new GameObject("VerticalGroup");
-    // verticalGroup.transform.SetParent(letterTilesContainer, false);
-    //
-    // // Добавляем и настраиваем RectTransform для растягивания по центру
-    // var rectTransform = verticalGroup.AddComponent<RectTransform>();
-    // rectTransform.anchorMin = new Vector2(0f, 0f);
-    // rectTransform.anchorMax = new Vector2(1f, 1f);
-    // rectTransform.pivot = new Vector2(0.5f, 0.5f);
-    // rectTransform.sizeDelta = new Vector2(200, 100); // Начальный размер
-    //
-    // // Добавляем ContentSizeFitter для автоматического размера
-    // // var sizeFitter = verticalGroup.AddComponent<ContentSizeFitter>();
-    // // sizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-    // // sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-    //
-    // var verticalLayout = verticalGroup.AddComponent<VerticalLayoutGroup>();
-    // verticalLayout.childAlignment = TextAnchor.MiddleCenter;
-    // verticalLayout.spacing = 5f;
-    // verticalLayout.childControlHeight = false;
-    // verticalLayout.childControlWidth = false;
-    // verticalLayout.childForceExpandHeight = false;
-    // verticalLayout.childForceExpandWidth = false;
-    
-    // Верхняя строка
-    var topRow = new GameObject("TopRow");
-    topRow.transform.SetParent(letterTilesContainer, false);
-    var topLayout = topRow.AddComponent<HorizontalLayoutGroup>();
-    topLayout.childAlignment = TextAnchor.MiddleCenter;
-    topLayout.spacing = 2f;
-    topLayout.childControlHeight = false;
-    topLayout.childControlWidth = false;
-    topLayout.childForceExpandHeight = false;
-    topLayout.childForceExpandWidth = false;
-    
-    createTopRow?.Invoke();
-    
-    // Стрелка-разделитель
-    if (arrowSeparatorPrefab != null)
     {
-        var arrow = Instantiate(arrowSeparatorPrefab, letterTilesContainer, false);
-        arrow.transform.localScale = Vector3.one * 0.8f;
+
+        // Верхняя строка
+        var topRow = new GameObject("TopRow");
+        topRow.transform.SetParent(letterTilesContainer, false);
+        var topLayout = topRow.AddComponent<HorizontalLayoutGroup>();
+        topLayout.childAlignment = TextAnchor.MiddleCenter;
+        topLayout.spacing = 5f;
+        topLayout.childControlHeight = false;
+        topLayout.childControlWidth = false;
+        topLayout.childScaleWidth = true;
+        topLayout.childForceExpandHeight = false;
+        topLayout.childForceExpandWidth = true;
+
+        createTopRow?.Invoke();
+
+        // Стрелка-разделитель
+        if (arrowSeparatorPrefab != null)
+        {
+            var arrow = Instantiate(arrowSeparatorPrefab, letterTilesContainer, false);
+            arrow.transform.localScale = Vector3.one * 0.8f;
+        }
+        else
+        {
+            CreateArrowSeparator(letterTilesContainer);
+        }
+
+        // Нижняя строка
+        var bottomRow = new GameObject("BottomRow");
+        bottomRow.transform.SetParent(letterTilesContainer, false);
+        var bottomLayout = bottomRow.AddComponent<HorizontalLayoutGroup>();
+        bottomLayout.childAlignment = TextAnchor.MiddleCenter;
+        bottomLayout.spacing = 5f;
+        bottomLayout.childControlHeight = false;
+        bottomLayout.childControlWidth = false;
+        bottomLayout.childScaleWidth = true;
+        bottomLayout.childScaleHeight = false;
+        bottomLayout.childForceExpandHeight = false;
+        bottomLayout.childForceExpandWidth = true;
+
+        createBottomRow?.Invoke();
     }
-    else
-    {
-        CreateArrowSeparator(letterTilesContainer);
-    }
-    
-    // Нижняя строка
-    var bottomRow = new GameObject("BottomRow");
-    bottomRow.transform.SetParent(letterTilesContainer, false);
-    var bottomLayout = bottomRow.AddComponent<HorizontalLayoutGroup>();
-    bottomLayout.childAlignment = TextAnchor.MiddleCenter;
-    bottomLayout.spacing = 2f;
-    bottomLayout.childControlHeight = false;
-    bottomLayout.childControlWidth = false;
-    bottomLayout.childForceExpandHeight = false;
-    bottomLayout.childForceExpandWidth = false;
-    
-    createBottomRow?.Invoke();
-}
 
     // Создает горизонтальную группу букв
     private void CreateHorizontalGroup<T>(List<T> items, System.Func<T, GameObject> createItem)
@@ -357,7 +345,7 @@ public class ImprovementCard : MonoBehaviour, IPointerClickHandler
 
     private GameObject CreateLetterTile(LetterData letterData)
     {
-        Debug.Log("Create LetterTile");
+        // Debug.Log("Create LetterTile");
         var letterObj = Instantiate(letterPrefab);
         var letterTile = letterObj.GetComponent<LetterTile>();
 
@@ -370,12 +358,19 @@ public class ImprovementCard : MonoBehaviour, IPointerClickHandler
             letterTile.SetText(letterData);
             // Уменьшаем масштаб для лучшего отображения в карточке
             letterObj.transform.localScale = Vector3.one * 0.7f;
-        }
         
+            // Делаем кнопку неинтерактивной
+            var button = letterObj.GetComponent<Button>();
+            if (button != null)
+            {
+                button.interactable = false;
+            }
+        }
+    
         // Устанавливаем родителя - находим текущий активный контейнер
         Transform currentContainer = FindCurrentContainer();
         letterObj.transform.SetParent(currentContainer ?? letterTilesContainer, false);
-        
+    
         return letterObj;
     }
 

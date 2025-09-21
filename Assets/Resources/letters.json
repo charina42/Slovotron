@@ -27,9 +27,9 @@
     { "letter": "ч", "count": 1, "points": 5 },
     { "letter": "ш", "count": 1, "points": 6 },
     { "letter": "щ", "count": 1, "points": 8 },
-    { "letter": "ъ", "count": 1, "points": 10 },
+    { "letter": "ъ", "count": 0, "points": 10 },
     { "letter": "ы", "count": 1, "points": 4 },
-    { "letter": "ь", "count": 2, "points": 5 },
+    { "letter": "ь", "count": 3, "points": 5 },
     { "letter": "э", "count": 1, "points": 4 },
     { "letter": "ю", "count": 1, "points": 6 },
     { "letter": "я", "count": 2, "points": 3 }

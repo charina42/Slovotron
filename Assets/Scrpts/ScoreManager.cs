@@ -71,8 +71,8 @@ public class ScoreManager
         public bool IsCapital { get; set; }
         public bool IsFinal { get; set; }
         public bool IsRepeater { get; set; }
-        // public bool IsNeighborMultiplierLeft => Letter?.Type == LetterType.NeighborMultiplierLeft;
-        // public bool IsNeighborMultiplierRight => Letter?.Type == LetterType.NeighborMultiplierRight;
+        public bool IsNeighborMultiplierLeft => Letter?.Type == LetterType.NeighborMultiplierLeft;
+        public bool IsNeighborMultiplierRight => Letter?.Type == LetterType.NeighborMultiplierRight;
     }
 
     public class BonusScore
@@ -109,6 +109,8 @@ public class ScoreManager
 
     public ScoreResult CalculateWordScore(List<LetterData> letterDataList)
     {
+        Debug.Log("CalculateWordScore");
+        
         var result = new ScoreResult();
         var word = string.Concat(letterDataList.Select(l => l.LetterChar));
     

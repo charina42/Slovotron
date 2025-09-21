@@ -2,36 +2,40 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
 
-public class GiveUpPopup : MonoBehaviour
+public class TutorialPopup : MonoBehaviour, IPointerClickHandler
 {
-    public static event Action<bool> OnGiveUpSelected; 
+    public event Action OnContinueSelected; 
     
     [SerializeField] private GameObject popup;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
-    [SerializeField] private Button giveUpButton;
     [SerializeField] private Button continueButton;
-    [SerializeField] private GameObject backgroundBlocker;
-    [SerializeField] private PopupAnimator popupAnimator;
+    [SerializeField] private GameObject backgroundBlocker; 
+    [SerializeField] private PopupAnimator popupAnimator; 
+    
 
     private void Awake()
     {
+        // Создаем блокировщик фона если он не установлен
         if (backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         }
-        
-        giveUpButton.onClick.AddListener(EndGame);
-        continueButton.onClick.AddListener(Continue);
+
+        if (continueButton != null)
+        {
+            continueButton.onClick.AddListener(Hide);
+        }
     }
     
     public void Initialize(PopupAnimator popupAnimator)
     {
         this.popupAnimator = popupAnimator;
     }
-    
+
     private void CreateBackgroundBlocker()
     {
         // Создаем объект для блокировки взаимодействия
@@ -39,7 +43,7 @@ public class GiveUpPopup : MonoBehaviour
         backgroundBlocker.transform.SetParent(transform.parent);
         backgroundBlocker.transform.SetAsFirstSibling();
         backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
-        backgroundBlocker.AddComponent<Button>().onClick.AddListener(Continue);
+        backgroundBlocker.AddComponent<Button>().onClick.AddListener(Hide);
         
         // Устанавливаем растяжение на весь экран
         RectTransform rectTransform = backgroundBlocker.GetComponent<RectTransform>();
@@ -58,29 +62,16 @@ public class GiveUpPopup : MonoBehaviour
         }
         popup.SetActive(true);
         
-        // Показываем анимацию
-        if (popupAnimator != null)
-        {
-            popupAnimator.Show();
-        }
+        popupAnimator.Show();
         
         // Блокируем взаимодействие с другими элементами
         SetInteractableForOtherUI(false);
     }
 
-    private void Continue()
-    {
-        Hide();
-    }
-
     private void Hide()
     {
-        // Скрываем анимацию
-        if (popupAnimator != null)
-        {
-            popupAnimator.Hide();
-        }
-        
+       
+        popupAnimator.Hide();
         // Деактивируем блокировщик и попап
         if (backgroundBlocker != null)
         {
@@ -89,6 +80,7 @@ public class GiveUpPopup : MonoBehaviour
         
         // Разблокируем взаимодействие с другими элементами
         SetInteractableForOtherUI(true);
+        OnContinueSelected?.Invoke();
     }
 
     private void SetInteractableForOtherUI(bool interactable)
@@ -97,8 +89,7 @@ public class GiveUpPopup : MonoBehaviour
         Button[] allButtons = FindObjectsOfType<Button>();
         foreach (Button button in allButtons)
         {
-            if (button != giveUpButton && 
-                button != continueButton && 
+            if (button != continueButton && 
                 button.gameObject != backgroundBlocker && 
                 !button.transform.IsChildOf(popup.transform))
             {
@@ -107,11 +98,31 @@ public class GiveUpPopup : MonoBehaviour
         }
     }
 
-    private void EndGame()
+    // Обработчик клика по попапу
+    public void OnPointerClick(PointerEventData eventData)
     {
-        Debug.Log("GiveUp");
         Hide();
-        OnGiveUpSelected?.Invoke(true);
+    }
+
+    public void SetTitle(string title)
+    {
+        if (titleText != null)
+        {
+            titleText.text = title;
+        }
+    }
+
+    public void SetMessage(string message)
+    {
+        if (messageText != null)
+        {
+            messageText.text = message;
+        }
+    }
+
+    public string GetMessage()
+    {
+        return messageText != null ? messageText.text : string.Empty;
     }
 
     private void OnDestroy()
@@ -122,4 +133,6 @@ public class GiveUpPopup : MonoBehaviour
             Destroy(backgroundBlocker);
         }
     }
+
+   
 }

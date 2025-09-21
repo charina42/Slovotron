@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using Scrpts;
-using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using YG;
 using YG.Utils.LB;
@@ -13,7 +13,12 @@ namespace YG
 {
     public partial class SavesYG
     {
+        public bool IsTutorialCompleted { get; set; }
         public int TotalScore { get; set; }
+        public GameStatistics GameStatistics { get; set; } = new GameStatistics();
+        public bool IsImprovementPopupOpen { get; set; }
+        public string LastValidatedWord { get; set; }
+        public ScoreManager.ScoreResult LastScoreResult { get; set; }
     }
 }
 
@@ -40,6 +45,8 @@ public class WordGameManager : MonoBehaviour
     [SerializeField] private Button shuffleButton;
     [SerializeField] private Button refreshButton;
     [SerializeField] private Button letterBagButton;
+    [SerializeField] private Button newGameButton;
+    [SerializeField] private Button eraseButton;
     [SerializeField] public LeaderboardYG leaderboardYG;
 
     private bool _isTutorialShow = true;
@@ -48,13 +55,7 @@ public class WordGameManager : MonoBehaviour
     private readonly Dictionary<int, List<string>> _wordsByLengthDictionary = new Dictionary<int, List<string>>();
     
     private readonly List<GameObject> _allInGameLetters = new List<GameObject>();
-    // private readonly List<GameObject> _lettersInWordSlots = new List<GameObject>() ; 
-    // public int TotalScore { get; private set; }
 
-    public event Action<int> OnScoreChanged;
-    public event Action OnInitialized;
-    // public static event Action<bool> OnClearWordSlots;
-    
     private LetterBag _letterBag;
     private WordPanelManager _wordPanelManager;
     private LetterBagPopup _letterBagPopup;
@@ -69,15 +70,19 @@ public class WordGameManager : MonoBehaviour
     private GameWinPopup _gameWinPopup;
     private LeaderboardManager _leaderboardManager;
     private ScoreAnimationController _scoreAnimationController;
+    private TutorialManager _tutorialManager;
+    private DictionaryManager _dictionaryManager;
 
     private MetaGameData _metaGameData;
 
-
-    public void Initialize(MetaGameData metaGameData, LetterBag letterBag, WordPanelManager wordPanelManager, LetterBagPopup letterBagPopup,
-        RoundManager roundManager, ScoreManager scoreManager, ImprovementSystem improvementSystem, 
-        ImprovementPanel improvementPanel, ImprovementChosePopup improvementChosePopup, GameOverPopup gameOverPopup,
-        GiveUpPopup giveUpPopup, GameWinPopup gameWinPopup, LeaderboardManager leaderboardManager, 
-        ScoreAnimationController scoreAnimationController)
+    // ========== INITIALIZATION ==========
+    public void Initialize(MetaGameData metaGameData, LetterBag letterBag, WordPanelManager wordPanelManager,
+        LetterBagPopup letterBagPopup, RoundManager roundManager, ScoreManager scoreManager, 
+        ImprovementSystem improvementSystem, ImprovementPanel improvementPanel,
+        ImprovementChosePopup improvementChosePopup, GameOverPopup gameOverPopup, GiveUpPopup giveUpPopup, 
+        GameWinPopup gameWinPopup, LeaderboardManager leaderboardManager,
+        ScoreAnimationController scoreAnimationController, TutorialManager tutorialManager,
+        DictionaryManager dictionaryManager)
     {
         _metaGameData = metaGameData; 
         _letterBag = letterBag;
@@ -93,11 +98,15 @@ public class WordGameManager : MonoBehaviour
          _gameWinPopup = gameWinPopup;
          _leaderboardManager = leaderboardManager;
          _scoreAnimationController = scoreAnimationController;
-        
+         _tutorialManager = tutorialManager;
+         _dictionaryManager = dictionaryManager;
+         
         submitButton.onClick.AddListener(CheckWord);
         refreshButton.onClick.AddListener(Refresh);
         letterBagButton.onClick.AddListener(ShowLetterBagPopup);
         shuffleButton.onClick.AddListener(ShuffleLetters);
+        newGameButton.onClick.AddListener(LoadNewGame);
+        eraseButton.onClick.AddListener(EraseWord);
         
         ImprovementSystem.OnImprovementSelected += ImprovementSelectedProceed;
         _letterBag.OnLetterReplaced += HandleLetterReplaced;
@@ -107,7 +116,8 @@ public class WordGameManager : MonoBehaviour
         WordPanelManager.OnRemoveInGameLetter += RemoveInGameLetterObject;
         YG2.onDefaultSaves += StartNewGame;
         YG2.onGetLeaderboard += OnLeaderboardUpdate;
-        this.OnInitialized += StartGame;
+        OnInitialized += StartGame;
+        _tutorialManager.OnTutorialStepCompleted += ProcessPendingWord;
         
         YG2.GetLeaderboard(leaderboardYG.nameLB);
         
@@ -118,30 +128,52 @@ public class WordGameManager : MonoBehaviour
     private void StartGame()
     {
         Debug.Log("StartGame");
-        
         InitializePool();
-        LoadDictionary();
-
+        _dictionaryManager.Initialize(wordsJson);
         _letterBag.InitializeBasePoints(lettersJson);
-        // _letterBag.DebugPrintLetterInventory();
-        ShowOnBoardLetters();
-        // ShuffleLetters();
-        _improvementPanel.ShowImprovements(YG2.saves.ActiveImprovements);
         
+        // Проверяем, нужно ли восстановить попап улучшений
+        if (YG2.saves.IsImprovementPopupOpen && YG2.saves.CurrentImprovementOptions != null)
+        {
+            RestoreImprovementPopup();
+        }
+        else
+        {
+            ShowOnBoardLetters();
+        }
+        
+        _improvementPanel.ShowImprovements(YG2.saves.ActiveImprovements);
         OnScoreChanged?.Invoke(YG2.saves.TotalScore);
         _roundManager.SetRoundPanelData();
         ShowLetterBagCount();
+        
+        if (_tutorialManager != null && !_tutorialManager.IsTutorialCompleted())
+        {
+            _tutorialManager.StartTutorial();
+        }
+    }
+    
+    private void RestoreImprovementPopup()
+    {
+        Debug.Log("Restoring improvement popup state");
+        
+        // Восстанавливаем попап с сохраненными данными
+        _improvementChosePopup.ShowPopup(
+            YG2.saves.CurrentImprovementOptions,
+            YG2.saves.LastValidatedWord,
+            YG2.saves.LastScoreResult
+        );
+        
+        // Очищаем флаг, чтобы при следующей загрузке не восстанавливать повторно
+        YG2.saves.IsImprovementPopupOpen = false;
+        YG2.SaveProgress();
     }
 
     private void StartNewGame()
     {
         Debug.Log("Start New Game");
         
-        // _letterBag.DebugPrintLetterInventory();
-        
         _letterBag.InitializeFromJson(lettersJson);
-        // _allInGameLetters.Clear();
-        // _lettersInWordSlots.Clear();
         SpawnNewLetters();
         if (_metaGameData.currentPlayerRecord > 0)
             _isTutorialShow = false;
@@ -153,45 +185,52 @@ public class WordGameManager : MonoBehaviour
         OnScoreChanged?.Invoke(YG2.saves.TotalScore);
         YG2.SaveProgress();
     }
-    
+
+    // ========== GAME STATE MANAGEMENT ==========
     private void GameOver(bool isOutOfLetters)
     {
         Debug.Log("Game Over ");
         _leaderboardManager.TrySetScore(YG2.saves.TotalScore);
-        _gameOverPopup.Show(isOutOfLetters, YG2.saves.TotalScore);
+        _gameOverPopup.Show(isOutOfLetters, YG2.saves.TotalScore, YG2.saves.GameStatistics);
     }
 
     private void WinGame()
     {
         _leaderboardManager.TrySetScore(YG2.saves.TotalScore);
-        _gameWinPopup.Show(YG2.saves.TotalScore);
+        _gameWinPopup.Show(YG2.saves.TotalScore, YG2.saves.GameStatistics);
     }
 
     private void LoadNewGame()
     {
         YG2.SetDefaultSaves();
-        // SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        YG2.saves.GameStatistics = new GameStatistics();
+        YG2.saves.IsImprovementPopupOpen = false;
+        YG2.saves.CurrentImprovementOptions.Clear();
+        YG2.saves.LastValidatedWord = null;
+        YG2.saves.LastScoreResult = null;
     }
     
     private void OnLeaderboardUpdate(LBData lbData)
     {
         if (lbData.technoName == leaderboardYG.nameLB && lbData.currentPlayer != null)
         {
-            // Debug.Log($"");
             _metaGameData.currentPlayerRecord = lbData.currentPlayer.score;
-            // previousRecordText.text = currentPlayerRecord.ToString();
             Debug.Log($"Текущий рекорд: {_metaGameData.currentPlayerRecord}");
         }
     }
+
+    // ========== SCORE MANAGEMENT ==========
+    public event Action<int> OnScoreChanged;
+    public event Action OnInitialized;
 
     private void AddScore(int amount)
     {
         YG2.saves.TotalScore += amount;
         
         OnScoreChanged?.Invoke(YG2.saves.TotalScore);
-        // Здесь можно добавить логику сохранения
     }
-    
+
+    // ========== UI MANAGEMENT ==========
     private void ShowLetterBagPopup()
     {
         if (_letterBag.GetCountInLocation(LetterLocation.InBag) > 0)
@@ -211,22 +250,48 @@ public class WordGameManager : MonoBehaviour
         Debug.Log($"Show letter bag count {count}");
     }
 
-
+    // ========== IMPROVEMENT SYSTEM ==========
     private void ImprovementSelectedProceed(bool isRoundEnded)
     {
+        // Очищаем сохраненное состояние попапа
+        YG2.saves.IsImprovementPopupOpen = false;
+        YG2.saves.CurrentImprovementOptions.Clear();;
+        YG2.saves.LastValidatedWord = null;
+        YG2.saves.LastScoreResult = null;
+        
         if (isRoundEnded)
         {
             SpawnNewLetters();
             _improvementPanel.ShowImprovements(YG2.saves.ActiveImprovements);
+            if (_tutorialManager.GetCurrentStepIndex() == 5)
+            {
+                _tutorialManager?.ShowSpecificStep("new_round");
+            }
         }
         else
         {
             FillEmptyUnlockedSlots();
+            if (_tutorialManager.GetCurrentStepIndex() == 3)
+            {
+                _tutorialManager?.ShowSpecificStep("round_goal");
+            }
         }
         
         YG2.SaveProgress();
+        
+       
+       
+        
+        // _tutorialManager.ShowNextStep();
     }
-
+    
+    private IEnumerator ShowTutorialStepWithDelayCoroutine(int stepIndex, float delaySeconds)
+    {
+        yield return new WaitForSeconds(delaySeconds);
+        _tutorialManager?.ShowSpecificStep(stepIndex);
+    }
+   
+    // ========== OBJECT POOL MANAGEMENT ==========
     private void InitializePool()
     {
         for (int i = 0; i < poolSize; i++)
@@ -248,14 +313,12 @@ public class WordGameManager : MonoBehaviour
             if (letter.activeSelf)
             {
                 Debug.LogError($"GetPooledLetter: Объект {letter.name} активен в пуле! Это ошибка.");
-                // letter.SetActive(false); // Принудительно деактивируем
             }
             letter.SetActive(true);
             return letter;
         }
         
         Debug.LogWarning("Letter Pool is empty!");
-        // GameObject newLetter = Instantiate(letterPrefab, lettersGrid);
         return null;
     }
     
@@ -266,18 +329,12 @@ public class WordGameManager : MonoBehaviour
         _letterObjectsPool.Enqueue(letter);
     }
 
-    private void LoadDictionary()
+    // ========== LETTER MANAGEMENT ==========
+
+    private void EraseWord()
     {
-        TextAsset dictFile = Resources.Load<TextAsset>(wordsJson);
-        
-        var data = JsonUtility.FromJson<SerializableDictionary>(dictFile.text);
-        
-        foreach (var wordList in data.wordLists)
-        {
-            _wordsByLengthDictionary[wordList.length] = wordList.words;
-        }
+        _wordPanelManager.ClearWordSlots(false);
     }
-    
     private void RemoveInGameLetterObject(GameObject letter)
     {
         _allInGameLetters.Remove(letter);
@@ -323,9 +380,6 @@ public class WordGameManager : MonoBehaviour
 
     private void ClearBoard()
     {
-        // Очищаем слоты для слов
-        // OnClearWordSlots?.Invoke(false);
-        
         _wordPanelManager.ClearWordSlots(false);
         
         // Очищаем все буквы на игровом поле
@@ -419,7 +473,31 @@ public class WordGameManager : MonoBehaviour
         }
         ShowLetterBagCount();
     }
-    
+
+    private void HandleLetterReplaced(LetterData oldLetter, LetterData newLetter, int countChanged)
+    {
+        foreach (var letter in _allInGameLetters)
+        {
+            var letterTile = letter.GetComponent<LetterTile>();
+            if (letterTile.Letter == oldLetter)
+            {
+                letterTile.SetLetter(newLetter);
+                letterTile.UpdatePoints();
+            }
+        }
+    }
+
+    private void FillEmptyUnlockedSlots()
+    {
+        foreach (var slot in letterSlots)
+        {
+            if (!slot.IsLocked && slot.transform.childCount == 0)
+                CreateLetterInSlot(slot);
+        }
+        ShowLetterBagCount();
+    }
+
+    // ========== WORD VALIDATION ==========
     private void CheckWord()
     {
         var result = _wordPanelManager.GetWordAndLetters();
@@ -433,80 +511,70 @@ public class WordGameManager : MonoBehaviour
         {
             Debug.Log("Слишком короткое слово");
             _wordPanelManager.ClearWordSlots(false);
-            // OnClearWordSlots?.Invoke(false);
             return;
         }
 
-        bool isValid = word.Contains('*') ? CheckWordWithWildcards(word, letterList) : CheckRegularWord(word);
+        var isValid = word.Contains('*') ? 
+            _dictionaryManager.CheckWordWithWildcards(word, letterList) : 
+            _dictionaryManager.CheckRegularWord(word);
         
         if (isValid)
         {
             Debug.Log($"Правильное слово: {word}");
-
-            ProcessValidWord(letterList, word);
+            
+            if (_tutorialManager != null && _tutorialManager.IsTutorialActive() 
+                                         && _tutorialManager.GetCurrentStepIndex() == 1)
+            {
+                // Сохраняем данные слова для обработки после туториала
+                _pendingWordData = (letterList, word);
+                _tutorialManager?.ShowSpecificStep("tile_mechanics");
+                // _tutorialManager.ShowNextStep();
+            }
+            else
+            {
+                // Если туториала нет, сразу обрабатываем слово
+                ProcessValidWord(letterList, word);
+            }
         }
         else
         {
             Debug.Log("Неизвестное слово");
             _wordPanelManager.ClearWordSlots(false);
-            // OnClearWordSlots?.Invoke(false);
         }
     }
+    
+    private (List<LetterData> letterList, string word)? _pendingWordData = null;
 
-    private bool CheckRegularWord(string word)
+    private void ProcessPendingWord()
     {
-        bool exists = _wordsByLengthDictionary.ContainsKey(word.Length) && 
-                      _wordsByLengthDictionary[word.Length].Contains(word);
-        
-        return exists;
-    }
-
-    private bool CheckWordWithWildcards(string pattern,  List<LetterData> letterList)
-    {
-        int length = pattern.Length;
-        if (!_wordsByLengthDictionary.ContainsKey(length))
-            return false;
-        
-        int maxScore = -1;
-        string bestMatch = null;
-        
-        foreach (string word in _wordsByLengthDictionary[length])
+        if (_pendingWordData.HasValue)
         {
-            if (MatchesWildcardPattern(word, pattern))
-            {
-                    bestMatch = word;
-                    break;
-            }
-        }
-        
-        if (bestMatch != null)
-        {
-            Debug.Log($"Лучшее совпадение: {bestMatch} (Очки: {maxScore})");
-            
-            return true;
+            var (letterList, word) = _pendingWordData.Value;
+            ProcessValidWord(letterList, word);
+            _pendingWordData = null;
         }
 
-        return false;
-    }
-
-    private bool MatchesWildcardPattern(string word, string pattern)
-    {
-        for (int i = 0; i < word.Length; i++)
+        if (_tutorialManager.GetCurrentStepIndex() == 4)
         {
-            if (pattern[i] != '*' && pattern[i] != word[i])
-                return false;
+            // Debug.Log($"tutorial step: {_tutorialManager.GetCurrentStepIndex()}");
+            StartCoroutine(ShowTutorialStepWithDelayCoroutine(4, 10f));
         }
-        return true;
     }
 
+    // ========== WORD PROCESSING ==========
     private void ProcessValidWord(List<LetterData> letterList, string word)
     {
         var scoreResult = _scoreManager.CalculateWordScore(letterList);
+        
+        YG2.saves.GameStatistics.UpdateStatistics(word, scoreResult.WordScore, letterList);
+        
+        Debug.Log("Score calculated and saved");
     
         // Создаем локальный обработчик, который отпишется после выполнения
         Action animationCompleteHandler = null;
         animationCompleteHandler = () => 
         {
+            Debug.Log("animation complete");
             _scoreAnimationController.OnAnimationComplete -= animationCompleteHandler;
         
             _letterBag.IncreaseWordPoints(letterList);
@@ -521,15 +589,14 @@ public class WordGameManager : MonoBehaviour
 
     private void WordProcessContinue(ScoreManager.ScoreResult scoreResult, string word)
     {
+        Debug.Log("WordProcessContinue");
         bool isRoundEnds;
         _wordPanelManager.ClearWordSlots(true);
-        // OnClearWordSlots?.Invoke(true);
         
         var roundState = _roundManager.HandleWordConfirmed(scoreResult.WordScore);
         switch (roundState)
         {
             case RoundManager.RoundState.Success:
-                // End round
                 ClearBoard();
                 _letterBag.ReturnUsedLettersToBag();
                 isRoundEnds = true;
@@ -547,53 +614,38 @@ public class WordGameManager : MonoBehaviour
                 throw new ArgumentOutOfRangeException();
         }
 
-        var improvementRarityList = new List<ImprovementRarity>();
-        if (isRoundEnds) // isMajor = true
+        List<ImprovementRarity> improvementRarityList;
+        if (isRoundEnds)
         {
-            // Для major улучшений нужен список из 3 элементов
-            improvementRarityList = new List<ImprovementRarity> { 
-                ImprovementRarity.Common, 
-                ImprovementRarity.Rare, 
-                ImprovementRarity.Epic 
-            };
+            improvementRarityList = _roundManager.GetRoundCompletionRarities();
         }
-        else // isMajor = false
+        else
         {
             var wordContributionPercentage = _roundManager.CalculateWordContributionPercentage(scoreResult.WordScore);
             improvementRarityList = _improvementSystem.GetWordRarities(wordContributionPercentage);
         }
 
         var improvementOptions = _improvementSystem.ShowImprovementOptions(isRoundEnds, improvementRarityList);
-        YG2.SaveProgress();
         
-        _improvementChosePopup.ShowPopup(improvementOptions, word,  scoreResult);
+        // Сохраняем состояние перед показом попапа
+        SaveImprovementPopupState(improvementOptions, word, scoreResult);
+        
+        _improvementChosePopup.ShowPopup(improvementOptions, word, scoreResult);
         ShowLetterBagCount();
+        _tutorialManager?.ShowSpecificStep("bag_improvements");
     }
-   
-
-    private void FillEmptyUnlockedSlots()
+    
+    private void SaveImprovementPopupState(List<ImprovementOption> options, string word, ScoreManager.ScoreResult scoreResult)
     {
-        foreach (var slot in letterSlots)
-        {
-            if (!slot.IsLocked && slot.transform.childCount == 0)
-                CreateLetterInSlot(slot);
-        }
-        ShowLetterBagCount();
+        Debug.Log("SaveImprovementPopupState");
+        YG2.saves.IsImprovementPopupOpen = true;
+        // YG2.saves.CurrentImprovementOptions = options;
+        YG2.saves.LastValidatedWord = word;
+        YG2.saves.LastScoreResult = scoreResult;
+        YG2.SaveProgress();
     }
 
-    private void HandleLetterReplaced(LetterData oldLetter, LetterData newLetter, int countChanged)
-    {
-        foreach (var letter in _allInGameLetters)
-        {
-            var letterTile = letter.GetComponent<LetterTile>();
-            if (letterTile.Letter == oldLetter)
-            {
-                letterTile.SetLetter(newLetter);
-                letterTile.UpdatePoints();
-            }
-        }
-    }
-
+    // ========== BOARD OPERATIONS ==========
     private void ShuffleLetters()
     {
         Debug.Log("Shuffling letters");
@@ -612,11 +664,11 @@ public class WordGameManager : MonoBehaviour
         }
         
         // 2. Перемешиваем только буквы из заполненных слотов
-        System.Random rng = new System.Random();
+        var rng = new System.Random();
         var shuffledLetters = filledSlots.Select(x => x.letter).OrderBy(x => rng.Next()).ToList();
 
         // 3. Меняем буквы местами, сохраняя исходные слоты
-        for (int i = 0; i < filledSlots.Count; i++)
+        for (var i = 0; i < filledSlots.Count; i++)
         {
             var originalSlot = filledSlots[i].slot;
             var newLetter = shuffledLetters[i];
@@ -624,8 +676,6 @@ public class WordGameManager : MonoBehaviour
             // Меняем только букву в слоту
             newLetter.HomeSlot = originalSlot;
             newLetter.MoveToSlot(originalSlot.transform, true);
-            // newLetter.transform.SetParent(originalSlot.transform);
-            // newLetter.transform.localPosition = Vector3.zero;
         }
     }
     
@@ -664,32 +714,5 @@ public class WordGameManager : MonoBehaviour
             _giveUpPopup.Show();
         }
         
-    }
-}
-
-[System.Serializable]
-public class SerializableDictionary
-{
-    public List<WordList> wordLists = new List<WordList>();
-
-    public SerializableDictionary(Dictionary<int, List<string>> dict)
-    {
-        foreach (var kvp in dict)
-        {
-            wordLists.Add(new WordList(kvp.Key, kvp.Value));
-        }
-    }
-}
-
-[System.Serializable]
-public class WordList
-{
-    public int length;
-    public List<string> words;
-
-    public WordList(int length, List<string> words)
-    {
-        this.length = length;
-        this.words = words;
     }
 }

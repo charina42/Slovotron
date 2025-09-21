@@ -87,11 +87,11 @@ public class LetterTile : MonoBehaviour//, IBeginDragHandler, IDragHandler, IEnd
                 break;
             case LetterType.NeighborMultiplierLeft:
                 letterText.color = Color.black;
-                letterText.text =  "<" + letterText.text;
+                pointsText.text =  "<x2";
                 break;
             case LetterType.NeighborMultiplierRight:
                 letterText.color = Color.black;
-                letterText.text += ">";
+                pointsText.text = "x2>";
                 break;
             case LetterType.Return:
                 letterText.color = Color.blue;

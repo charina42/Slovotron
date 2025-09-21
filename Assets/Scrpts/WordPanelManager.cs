@@ -12,6 +12,8 @@ public class WordPanelManager: MonoBehaviour
     [Header("Panels")]
     [SerializeField] private RectTransform wordSlotsPanel;
     [SerializeField] private GameObject slotPrefab;
+    [SerializeField] private Button actionButton; 
+    [SerializeField] private float buttonOffset = 10f;
     
      private readonly List<GameObject> _wordSlots = new List<GameObject>();
      private readonly List<GameObject> _inactiveWordSlots = new List<GameObject>();
@@ -37,6 +39,7 @@ public class WordPanelManager: MonoBehaviour
             slot.SetActive(false);
             _inactiveWordSlots.Add(slot);
         }
+        // UpdateButtonPosition();
     }
     
     private GameObject GetInactiveSlot()
@@ -58,6 +61,7 @@ public class WordPanelManager: MonoBehaviour
         
         var slot = GetInactiveSlot();
         _wordSlots.Add(slot);
+        UpdateButtonPosition();
     }
 
     private void RemoveSlot()
@@ -68,6 +72,7 @@ public class WordPanelManager: MonoBehaviour
         slot.SetActive(false);
         _inactiveWordSlots.Insert(0,slot);
         _wordSlots.Remove(slot);
+        UpdateButtonPosition();
     }
     
      private void UpdatePanelsState()
@@ -90,6 +95,7 @@ public class WordPanelManager: MonoBehaviour
                 RemoveSlot();
             }
         }
+        // UpdateButtonPosition();
     }
      
     private void CleanTrailingNulls()
@@ -107,17 +113,7 @@ public class WordPanelManager: MonoBehaviour
             }
         }
     }
-
-    private int FilledSlotsCount()
-    {
-        int filledSlotsCount = 0;
-        foreach (var letter in _lettersInWordSlots)
-        {
-            if (letter)
-                filledSlotsCount++;
-        }
-        return filledSlotsCount;
-    }
+    
     
     public (string word, List<LetterData> letterList) GetWordAndLetters()
     {
@@ -237,27 +233,6 @@ public class WordPanelManager: MonoBehaviour
         UpdatePanelsState();
     }
     
-    public void PlayWordJumpAnimation(Action onComplete = null, float jumpPower = 0.5f, float duration = 0.3f, float delayBetweenLetters = 0.1f)
-    {
-        Debug.Log("Playing word jump animation");
-        Sequence sequence = DOTween.Sequence();
-        CleanTrailingNulls();
-
-        foreach (var letterObj in _lettersInWordSlots)
-        {
-            if (letterObj == null) continue;
-        
-            var letterTile = letterObj.GetComponent<LetterTile>();
-            if (letterTile != null)
-            {
-                sequence.AppendCallback(() => letterTile.PlayJumpAnimation(jumpPower, duration));
-                sequence.AppendInterval(delayBetweenLetters);
-            }
-        }
-
-        sequence.OnComplete(() => onComplete?.Invoke());
-    }
-    
     public void PlayLetterAnimation(LetterData letter, int position, float duration = 0.3f)
     {
         var letterObj = _lettersInWordSlots[position];
@@ -268,6 +243,33 @@ public class WordPanelManager: MonoBehaviour
         {
             letterTile.PlayJumpAnimation(duration: duration);
         }
+    }
+    
+    private void UpdateButtonPosition()
+    {
+        if (actionButton == null) return;
+        Debug.Log("UpdateButtonPosition");
+    
+        // Ждём конец кадра для корректного расчета позиций
+        StartCoroutine(UpdateButtonPositionCoroutine());
+    }
+
+    private IEnumerator UpdateButtonPositionCoroutine()
+    {
+        yield return null; // Ждём конец кадра
+    
+        if (_wordSlots.Count == 0 || actionButton == null) yield break;
+    
+        // Получаем последний активный слот
+        var lastSlot = _wordSlots[^1].GetComponent<RectTransform>();
+    
+        // Вычисляем позицию для кнопки (правее последнего слота)
+        float lastSlotRightEdge = lastSlot.anchoredPosition.x + lastSlot.rect.width;
+        float buttonX = lastSlotRightEdge + buttonOffset;
+    
+        // Устанавливаем позицию кнопки
+        var buttonRect = actionButton.GetComponent<RectTransform>();
+        buttonRect.anchoredPosition = new Vector2(buttonX, buttonRect.anchoredPosition.y);
     }
     
 }

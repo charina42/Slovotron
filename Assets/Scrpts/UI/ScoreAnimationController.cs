@@ -47,12 +47,21 @@ public class ScoreAnimationController : MonoBehaviour
 
     public void StartAnimation(ScoreManager.ScoreResult scoreData)
     {
+        Debug.Log($"StartAnimation ");
+    
+        // Очищаем предыдущую анимацию
+        if (_animationSequence != null && _animationSequence.IsActive())
+        {
+            _animationSequence.Kill();
+            _animationSequence = null;
+        }
+    
         InitializeAnimation(scoreData);
-        
+    
         AnimateLetters(scoreData);
         AnimateSpecialLetterBonuses(scoreData);
         AnimateImprovementBonuses(scoreData);
-        
+    
         CompleteAnimation();
     }
 
@@ -65,20 +74,53 @@ public class ScoreAnimationController : MonoBehaviour
         _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.WordScore;
         _accumulatedScore = 0;
         _currentScore = 0;
-        _currentTime = 0.3f;
+        _currentTime = 0f; // Сбрасываем время
         _accumulatedWidth = MinWidth;
+    
+        // Создаем новую последовательность
         _animationSequence = DOTween.Sequence();
-        
+    
         scoreText.text = "0";
     }
 
     private void AnimateLetters(ScoreManager.ScoreResult scoreData)
     {
+        Debug.Log($"AnimateLetters ");
+        // Сначала собираем информацию о мультипликаторах соседей
+        var neighborMultipliers = new Dictionary<int, (bool isLeft, int multiplierIndex)>();
+        
         for (int i = 0; i < scoreData.LetterScores.Count; i++)
         {
             var letterData = scoreData.LetterScores[i];
             
-            if (letterData.IsRepeater)
+            // Проверяем, является ли буква мультипликатором соседа
+            if (letterData.IsNeighborMultiplierLeft && i > 0)
+            {
+                neighborMultipliers[i - 1] = (true, i);
+            }
+            else if (letterData.IsNeighborMultiplierRight && i < scoreData.LetterScores.Count - 1)
+            {
+                neighborMultipliers[i + 1] = (false, i);
+            }
+        }
+
+        // Анимируем буквы с учетом мультипликаторов
+        for (int i = 0; i < scoreData.LetterScores.Count; i++)
+        {
+            var letterData = scoreData.LetterScores[i];
+            
+            // Пропускаем мультипликаторы соседей - они будут анимированы вместе с целевыми буквами
+            if (letterData.IsNeighborMultiplierLeft || letterData.IsNeighborMultiplierRight)
+                continue;
+            
+            if (neighborMultipliers.ContainsKey(i))
+            {
+                // Анимируем букву вместе с ее мультипликатором
+                var (isLeft, multiplierIndex) = neighborMultipliers[i];
+                var multiplierData = scoreData.LetterScores[multiplierIndex];
+                AnimateLetterWithMultiplier(letterData, i, multiplierData, multiplierIndex, scoreData);
+            }
+            else if (letterData.IsRepeater)
             {
                 AnimateRepeaterLetter(letterData, i, scoreData);
             }
@@ -87,6 +129,22 @@ public class ScoreAnimationController : MonoBehaviour
                 AnimateRegularLetter(letterData, i);
             }
         }
+    }
+
+    private void AnimateLetterWithMultiplier(ScoreManager.LetterScore targetLetter, int targetIndex, 
+                                           ScoreManager.LetterScore multiplierLetter, int multiplierIndex,
+                                           ScoreManager.ScoreResult scoreData)
+    {
+        int letterPoints = targetLetter.Points;
+        _accumulatedScore += letterPoints;
+
+        // Анимируем целевую букву и мультипликатор одновременно
+        AddLetterAnimation(targetLetter.Letter, targetIndex, letterPoints);
+        AddSimultaneousLetterAnimation(multiplierLetter.Letter, multiplierIndex, 0); // 0 очков для мультипликатора
+        
+        AnimateProgressBar(_currentTime, letterJumpDuration);
+
+        _currentTime += letterJumpDuration;
     }
 
     private void AnimateRegularLetter(ScoreManager.LetterScore letterData, int index)
@@ -177,6 +235,7 @@ public class ScoreAnimationController : MonoBehaviour
 
     private void AnimateSpecialLetterBonuses(ScoreManager.ScoreResult scoreData)
     {
+        // Debug.Log($"AnimateSpecialLetterBonuses ");
         foreach (var bonus in scoreData.BonusScores.Where(bonus => IsSpecialLetterBonus(bonus)))
         {
             AnimateSpecialLetterBonus(bonus, scoreData);
@@ -214,10 +273,13 @@ public class ScoreAnimationController : MonoBehaviour
 
     private void AnimateImprovementBonuses(ScoreManager.ScoreResult scoreData)
     {
+        
+        // Debug.Log($"AnimateImprovementBonuses ");
         foreach (var bonus in scoreData.BonusScores.Where(bonus => !IsSpecialLetterBonus(bonus)))
         {
             AnimateImprovementBonus(bonus);
         }
+        // Debug.Log($"AnimateImprovementBonuses complete");
     }
 
     private void AnimateImprovementBonus(ScoreManager.BonusScore bonus)
@@ -250,11 +312,17 @@ public class ScoreAnimationController : MonoBehaviour
 
     private void CompleteAnimation()
     {
+        if (_animationSequence == null) return;
+    
         _animationSequence.OnComplete(() =>
         {
+            Debug.Log("Animation Complete");
             scoreText.text = _accumulatedScore.ToString();
             OnAnimationComplete?.Invoke();
             scorePanel.SetActive(false);
+        
+            // Очищаем последовательность после завершения
+            _animationSequence = null;
         });
     }
 
@@ -263,7 +331,11 @@ public class ScoreAnimationController : MonoBehaviour
         fillRect.DOKill();
         fillRect.sizeDelta = new Vector2(0f, fillRect.sizeDelta.y);
         _accumulatedScore = 0;
+        _currentScore = 0;
         scoreText.text = "0";
+    
+        // Сбрасываем accumulatedWidth
+        _accumulatedWidth = MinWidth;
     }
 
     private void AnimateLetter(LetterData letter, int position, float duration)

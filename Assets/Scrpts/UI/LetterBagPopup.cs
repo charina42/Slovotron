@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -7,50 +7,172 @@ using UnityEngine.UI;
 public class LetterBagPopup : MonoBehaviour
 {
     [Header("UI Elements")]
-    public GameObject popupPanel; // Панель, содержащая попап
-    public Transform activeLettersContainer; // Контейнер для активных букв
-    public Transform usedLettersContainer; // Контейнер для использованных букв
-    public GameObject letterPrefab; // Префаб для отображения буквы (текстовый объект)
-    public Button closeButton; // Кнопка закрытия попапа
+    public GameObject popupPanel;
+    public Transform activeLettersContainer;
+    public Transform usedLettersContainer;
+    public GameObject letterPrefab;
+    public Button closeButton;
+    public GameObject backgroundBlocker;
+    
+    [Header("Tab System")]
+    public Button activeLettersTab;
+    public Button usedLettersTab;
+    public GameObject activeLettersContent;
+    public GameObject usedLettersContent;
 
-    private LetterBag _letterBag; // Ссылка на экземпляр LetterBag
+    [SerializeField] private PopupAnimator popupAnimator;
+
+    private LetterBag _letterBag;
 
     private void Awake()
     {
         // Подписываемся на событие нажатия кнопки закрытия
         closeButton.onClick.AddListener(ClosePopup);
+        
+        // Подписываемся на события вкладок
+        activeLettersTab.onClick.AddListener(ShowActiveLetters);
+        usedLettersTab.onClick.AddListener(ShowUsedLetters);
+        
+        // Создаем блокировщик если он не установлен
+        if (backgroundBlocker == null)
+        {
+            CreateBackgroundBlocker();
+        }
     }
-
-    // Инициализация попапа с данными из LetterBag
-    public void Initialize(LetterBag letterBag)
+    
+    public void Initialize(LetterBag letterBag, PopupAnimator popupAnimator)
     {
         _letterBag = letterBag;
+        this.popupAnimator = popupAnimator;
+    }
+    
+    private void CreateBackgroundBlocker()
+    {
+        // Создаем объект для блокировки взаимодействия
+        backgroundBlocker = new GameObject("BackgroundBlocker");
+        backgroundBlocker.transform.SetParent(transform.parent);
+        backgroundBlocker.transform.SetAsFirstSibling();
+        backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
+        backgroundBlocker.AddComponent<Button>().onClick.AddListener(ClosePopup);
+        
+        // Устанавливаем растяжение на весь экран
+        RectTransform rectTransform = backgroundBlocker.GetComponent<RectTransform>();
+        rectTransform.anchorMin = Vector2.zero;
+        rectTransform.anchorMax = Vector2.one;
+        rectTransform.sizeDelta = Vector2.zero;
+        rectTransform.anchoredPosition = Vector2.zero;
+        
+        backgroundBlocker.SetActive(false);
     }
 
     // Отображение попапа
     public void ShowPopup()
     {
+        // Активируем блокировщик и попап
+        if (backgroundBlocker != null)
+        {
+            backgroundBlocker.SetActive(true);
+        }
         popupPanel.SetActive(true);
-        UpdateLettersDisplay();
+        
+        // Показываем анимацию
+        if (popupAnimator != null)
+        {
+            popupAnimator.Show();
+        }
+        
+        // Блокируем взаимодействие с другими элементами
+        SetInteractableForOtherUI(false);
+        ShowActiveLetters();
     }
 
     // Закрытие попапа
     public void ClosePopup()
     {
+        // Скрываем анимацию
+        if (popupAnimator != null)
+        {
+            popupAnimator.Hide();
+        }
+        
+        // Деактивируем блокировщик и попап
+        if (backgroundBlocker != null)
+        {
+            backgroundBlocker.SetActive(false);
+        }
         popupPanel.SetActive(false);
+        
+        // Разблокируем взаимодействие с другими элементами
+        SetInteractableForOtherUI(true);
 
         // Очищаем контейнеры
         ClearContainer(activeLettersContainer);
         ClearContainer(usedLettersContainer);
     }
 
-    // Обновление отображения букв в попапе
-    private void UpdateLettersDisplay()
+    private void SetInteractableForOtherUI(bool interactable)
     {
-        var activeLetters = GetActiveLetters();
-        var usedLetters = GetUsedLetters();
+        // Находим все кнопки и другие интерактивные элементы кроме наших
+        Button[] allButtons = FindObjectsOfType<Button>();
+        foreach (Button button in allButtons)
+        {
+            if (button != closeButton && 
+                button != activeLettersTab && 
+                button != usedLettersTab && 
+                !button.transform.IsChildOf(popupPanel.transform))
+            {
+                button.interactable = interactable;
+            }
+        }
+    }
 
+    // Показать вкладку активных букв
+    private void ShowActiveLetters()
+    {
+        activeLettersContent.SetActive(true);
+        usedLettersContent.SetActive(false);
+        
+        UpdateTabAppearance(activeLettersTab, true);
+        UpdateTabAppearance(usedLettersTab, false);
+        
+        UpdateActiveLettersDisplay();
+    }
+
+    // Показать вкладку использованных букв
+    private void ShowUsedLetters()
+    {
+        activeLettersContent.SetActive(false);
+        usedLettersContent.SetActive(true);
+        
+        UpdateTabAppearance(activeLettersTab, false);
+        UpdateTabAppearance(usedLettersTab, true);
+        
+        UpdateUsedLettersDisplay();
+    }
+
+    // Обновление внешнего вида кнопки вкладки
+    private void UpdateTabAppearance(Button tabButton, bool isActive)
+    {
+        ColorBlock colors = tabButton.colors;
+        colors.normalColor = isActive ? new Color(0.8f, 0.8f, 0.8f) : Color.white;
+        tabButton.colors = colors;
+        
+        tabButton.interactable = !isActive;
+    }
+
+    // Обновление отображения активных букв
+    private void UpdateActiveLettersDisplay()
+    {
+        ClearContainer(activeLettersContainer);
+        var activeLetters = GetActiveLetters();
         DisplayLetters(activeLetters, activeLettersContainer);
+    }
+
+    // Обновление отображения использованных букв
+    private void UpdateUsedLettersDisplay()
+    {
+        ClearContainer(usedLettersContainer);
+        var usedLetters = GetUsedLetters();
         DisplayLetters(usedLetters, usedLettersContainer);
     }
 
@@ -66,7 +188,6 @@ public class LetterBagPopup : MonoBehaviour
             );
     }
 
-    // Получение словаря с использованными буквами и их количеством
     private Dictionary<LetterData, int> GetUsedLetters()
     {
         return _letterBag.GetAllLetters()
@@ -77,7 +198,6 @@ public class LetterBagPopup : MonoBehaviour
             );
     }
 
-    // Отображение букв в заданном контейнере
     private void DisplayLetters(Dictionary<LetterData, int> letters, Transform container)
     {
         foreach (var letterData in letters)
@@ -90,17 +210,31 @@ public class LetterBagPopup : MonoBehaviour
                 if (draggable != null)
                 {
                     draggable.SetText(letterData.Key);
+                    
+                    var button = draggable.GetComponent<Button>();
+                    if (button != null)
+                    {
+                        button.interactable = false;
+                    }
                 }
             }
         }
     }
 
-    // Очистка контейнера от всех дочерних объектов
     private void ClearContainer(Transform container)
     {
         foreach (Transform child in container)
         {
             Destroy(child.gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Убираем блокировщик при уничтожении объекта
+        if (backgroundBlocker != null)
+        {
+            Destroy(backgroundBlocker);
         }
     }
 }

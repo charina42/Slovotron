@@ -64,7 +64,7 @@ public class BagImprovementOptionBuilder
             case "DoublePoints2":
             case "DoublePoints3":
             case "DoublePoints45":
-                _letterBag.DoublePointsForOneLetter(option.TargetLetter[1]);
+                _letterBag.DoublePointsForOneLetter(option.TargetLetter[0]);
                 break;
 
             case "AddOnePointTo4":
@@ -130,9 +130,9 @@ public class BagImprovementOptionBuilder
     {
         var targetLetterTile = GetRandomLetterWithExactCost(cost, cost2);
         
-        if (targetLetterTile == null)
+        if (targetLetterTile == null || !HasEnoughLettersInBag(targetLetterTile.LetterChar))
         {
-            Debug.LogError("Буква не найдена");
+            return null; // Недостаточно букв для улучшения
         }
 
         var targetLetter = targetLetterTile.LetterChar;
@@ -242,6 +242,12 @@ public class BagImprovementOptionBuilder
             Debug.LogError($"Не найдены подходящие буквы для слияния {count} штук");
             return null;
         }
+        
+        if (lettersToMerge.Count == 0 || 
+            !HasEnoughLettersInBag(lettersToMerge, count))
+        {
+            return null; // Недостаточно букв для слияния
+        }
 
         var targetLetter = lettersToMerge[0].LetterChar;
         var totalPoints = lettersToMerge.Sum(letter => letter.Points);
@@ -331,6 +337,7 @@ public class BagImprovementOptionBuilder
             EffectType = baseImprovement.effect,
             TargetLetter = targetLetterTile,
             TargetLetterChar = targetLetter,
+            TargetLetterPoints = targetLetterPoints,
             Description = description,
             shortDescription = baseImprovement.shortDescription,
             modifier = baseImprovement.modifier, // Сохраняем исходный modifier
@@ -347,32 +354,45 @@ public class BagImprovementOptionBuilder
     }
     
     
+    private bool HasEnoughLettersInBag(char letterChar, int requiredCount = 1)
+    {
+        return _lettersPool
+            .Where(kv => kv.Key.LetterChar == letterChar && kv.Value > 0)
+            .Sum(kv => kv.Value) >= requiredCount;
+    }
+
+    private bool HasEnoughLettersInBag(List<LetterData> letters, int requiredCount = 1)
+    {
+        if (letters == null) return true;
     
-    
+        foreach (var letter in letters)
+        {
+            var available = _lettersPool
+                .Where(kv => kv.Key.Equals(letter) && kv.Value > 0)
+                .Sum(kv => kv.Value);
+            
+            if (available < requiredCount)
+                return false;
+        }
+        return true;
+    }
+
     [CanBeNull]
     private List<LetterData> GetLettersWithLowestInventoryValue(int count)
     {
         var result = new List<LetterData>();
 
-        // Получаем минимальную стоимость из доступных букв
-        var minCost = _lettersPool
-            .Where(kv => kv.Value > 0)
-            .Select(kv => kv.Key.Points)
-            .DefaultIfEmpty(int.MaxValue)
-            .Min();
-
-        if (minCost == int.MaxValue)
-            return result;
-
-        // Получаем все буквы с минимальной стоимостью и доступными фишками
+        // Получаем все доступные буквы из пула
         var availableLetters = _lettersPool
-            .Where(kv => kv.Key.Points == minCost && kv.Value > 0)
+            .Where(kv => kv.Value > 0)
+            .OrderBy(kv => kv.Key.Points) // Сортируем по стоимости
+            .ThenBy(kv => kv.Key.LetterChar) // Для детерминированности
             .ToList();
 
         if (!availableLetters.Any())
             return result;
 
-        // Создаем взвешенный список, где каждая буква повторяется столько раз, сколько доступно фишек
+        // Создаем взвешенный список всех доступных фишек
         var weightedPool = new List<LetterData>();
         foreach (var letterKv in availableLetters)
         {
@@ -382,24 +402,62 @@ public class BagImprovementOptionBuilder
             }
         }
 
-        // Случайно выбираем нужное количество фишек из взвешенного пула
-        while (result.Count < count && weightedPool.Count > 0)
+        // Если в пуле меньше фишек, чем нужно, возвращаем все что есть
+        if (weightedPool.Count < count)
         {
-            int randomIndex = Random.Range(0, weightedPool.Count);
-            result.Add(weightedPool[randomIndex]);
-            weightedPool.RemoveAt(randomIndex);
+            return weightedPool.Take(count).ToList();
         }
 
-        return result;
+        // Группируем по стоимости и сортируем по возрастанию
+        var lettersByCost = weightedPool
+            .GroupBy(letter => letter.Points)
+            .OrderBy(group => group.Key)
+            .ToList();
+
+        // Собираем фишки начиная с самых дешевых
+        foreach (var costGroup in lettersByCost)
+        {
+            var lettersInThisCost = costGroup.ToList();
+
+            // Берем столько фишек из этой группы, сколько нужно или сколько есть
+            int takeCount = Math.Min(count - result.Count, lettersInThisCost.Count);
+
+            // Перемешиваем фишки в этой группе для случайного выбора
+            for (int i = 0; i < takeCount; i++)
+            {
+                int randomIndex = Random.Range(0, lettersInThisCost.Count);
+                result.Add(lettersInThisCost[randomIndex]);
+                lettersInThisCost.RemoveAt(randomIndex);
+            }
+
+            // Если набрали нужное количество, выходим
+            if (result.Count >= count)
+                break;
+        }
+
+        // Если все равно не набрали (маловероятно, но на всякий случай)
+        if (result.Count < count)
+        {
+            // Добираем случайные фишки из оставшихся
+            var remainingLetters = weightedPool.Except(result).ToList();
+            while (result.Count < count && remainingLetters.Count > 0)
+            {
+                int randomIndex = Random.Range(0, remainingLetters.Count);
+                result.Add(remainingLetters[randomIndex]);
+                remainingLetters.RemoveAt(randomIndex);
+            }
+        }
+
+        return result.Take(count).ToList(); // Гарантируем ровно count элементов
     }
-    
+
     [CanBeNull]
     private LetterData GetRandomLetterWithExactCost(int cost, int cost2 = -1)
     {
         if (cost2 == -1) cost2 = cost;
-        
+    
         var letters = _lettersPool
-            .Where(letter => letter.Key.Points == cost || letter.Key.Points == cost2)
+            .Where(letter => (letter.Key.Points == cost || letter.Key.Points == cost2) && letter.Value > 0)
             .ToList();
 
         if (!letters.Any())
@@ -519,6 +577,17 @@ public class BagImprovementOptionBuilder
         if (!availableLetters.Any())
             return '\0';
 
-        return availableLetters[0].Letter;
+        // Взвешенный случайный выбор - чем выше стоимость, тем больше шансов быть выбранной
+        var weightedPool = new List<char>();
+        foreach (var letter in availableLetters)
+        {
+            int weight = Mathf.RoundToInt((float)letter.AvgPoints);
+            for (int i = 0; i < weight; i++)
+            {
+                weightedPool.Add(letter.Letter);
+            }
+        }
+
+        return weightedPool[Random.Range(0, weightedPool.Count)];
     }
 }
