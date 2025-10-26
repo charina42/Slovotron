@@ -2,14 +2,15 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Serialization;
 using YG;
 
 public class GameWinPopup : MonoBehaviour
 {
     public static event Action OnNewGameSelected;
 
-    [SerializeField] private GameObject _popup;
-    [SerializeField] private TMP_Text _titleText;
+    [SerializeField] private GameObject popup;
+     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text _messageText;
     [SerializeField] private TMP_Text _bestScoreText;
     [SerializeField] private TMP_Text _statisticsText;
@@ -20,18 +21,19 @@ public class GameWinPopup : MonoBehaviour
 
     private void Awake()
     {
+        popupAnimator = popup.GetComponent<PopupAnimator>();
+        if (popupAnimator == null)
+        {
+            popupAnimator = popup.AddComponent<PopupAnimator>();
+        }
+        
         if (backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         }
         
         _restartButton.onClick.AddListener(RestartGame);
-        _popup.SetActive(false);
-    }
-    
-    public void Initialize(PopupAnimator popupAnimator)
-    {
-        this.popupAnimator = popupAnimator;
+        popup.SetActive(false);
     }
     
     private void CreateBackgroundBlocker()
@@ -58,7 +60,7 @@ public class GameWinPopup : MonoBehaviour
         {
             backgroundBlocker.SetActive(true);
         }
-        _popup.SetActive(true);
+        popup.SetActive(true);
         
         // Показываем анимацию
         if (popupAnimator != null)
@@ -114,7 +116,7 @@ public class GameWinPopup : MonoBehaviour
         {
             if (button != _restartButton && 
                 button.gameObject != backgroundBlocker && 
-                !button.transform.IsChildOf(_popup.transform))
+                !button.transform.IsChildOf(popup.transform))
             {
                 button.interactable = interactable;
             }

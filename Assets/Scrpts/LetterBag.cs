@@ -218,9 +218,10 @@ public class LetterBag
                     break;
                 
                 case LetterType.Return:
+                    
                     // Помечаем для возврата на поле
-                    lettersToReturn.Add(letter);
-                    MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.Used);
+                    // lettersToReturn.Add(letter);
+                    // MoveLetter(letter, LetterLocation.OnBoard, LetterLocation.Used);
                     break;
                 
                 case LetterType.Wild when letter.LetterChar == '*':
@@ -237,12 +238,6 @@ public class LetterBag
                     IncreasePointsForUsedLetter(letter);
                     break;
             }
-        }
-    
-        // Возвращаем буквы типа Return на поле
-        foreach (var returnLetter in lettersToReturn)
-        {
-            MoveLetter(returnLetter, LetterLocation.Used, LetterLocation.OnBoard);
         }
     }
 
@@ -378,11 +373,11 @@ public class LetterBag
         AddLetter(letter, LetterLocation.InBag);
     }
     
-    public void AddNeighborMultiplierToPool(char letterChar, string direction)
+    public void AddNeighborMultiplierToPool(char letterChar, int direction)
     {
         var points = 0; // Сама по себе приносит 0 очков
     
-        LetterType multiplierType = direction.ToLower() == "left" 
+        LetterType multiplierType = direction == 1 //left 
             ? LetterType.NeighborMultiplierLeft 
             : LetterType.NeighborMultiplierRight;
     

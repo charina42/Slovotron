@@ -11,9 +11,18 @@ public class PopupAnimator : MonoBehaviour
     
     private Vector3 _originalScale;
     private CanvasGroup _canvasGroup;
+    private bool _isInitialized = false;
     
     private void Awake()
     {
+        Initialize();
+    }
+    
+    private void Initialize()
+    {
+        if (_isInitialized) return;
+        
+        // Сохраняем оригинальный масштаб
         _originalScale = transform.localScale;
         
         // Добавляем CanvasGroup если его нет
@@ -22,17 +31,14 @@ public class PopupAnimator : MonoBehaviour
         {
             _canvasGroup = gameObject.AddComponent<CanvasGroup>();
         }
-        
-        // Скрываем попап при старте
-        transform.localScale = Vector3.zero;
-        _canvasGroup.alpha = 0;
-        gameObject.SetActive(false);
+        _isInitialized = true;
     }
-    
     
     public void Show()
     {
-        gameObject.SetActive(true);
+        if (!_isInitialized) Initialize();
+        
+        // gameObject.SetActive(true);
         
         // Сбрасываем предыдущие анимации
         transform.DOKill();
@@ -41,6 +47,8 @@ public class PopupAnimator : MonoBehaviour
         // Анимация появления
         transform.localScale = Vector3.zero;
         _canvasGroup.alpha = 0;
+        _canvasGroup.interactable = false;
+        _canvasGroup.blocksRaycasts = false;
         
         Sequence showSequence = DOTween.Sequence();
         showSequence.Join(transform.DOScale(_originalScale, showDuration).SetEase(showEase));
@@ -53,6 +61,8 @@ public class PopupAnimator : MonoBehaviour
     
     public void Hide()
     {
+        if (!_isInitialized) Initialize();
+        
         // Сбрасываем предыдущие анимации
         transform.DOKill();
         _canvasGroup.DOKill();
@@ -73,6 +83,8 @@ public class PopupAnimator : MonoBehaviour
     // Для быстрого скрытия без анимации
     public void HideImmediate()
     {
+        if (!_isInitialized) Initialize();
+        
         transform.DOKill();
         _canvasGroup.DOKill();
         
@@ -86,7 +98,6 @@ public class PopupAnimator : MonoBehaviour
     private void OnDestroy()
     {
         transform.DOKill();
+        if (_canvasGroup != null) _canvasGroup.DOKill();
     }
-
-   
 }

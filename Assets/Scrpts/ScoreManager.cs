@@ -48,7 +48,7 @@ public class ScoreManager
                 foreach (var bonus in BonusScores)
                 {
                     string bonusDesc = bonus.IsFromImprovement ? 
-                        $"+{bonus.Points} ({bonus.SourceImprovement.shortDescription})" :
+                        $"+{bonus.Points} ({bonus.SourceImprovement.ShortDescription})" :
                         $"+{bonus.Points} ({bonus.Description})";
         
                     desc += bonusDesc;
@@ -280,7 +280,7 @@ public class ScoreManager
         if (Vowels.Contains(char.ToLower(word[0])))
         {
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, 5));
+                improvement, improvement.ShortDescription, 5));
             result.WordScore += 5;
         }
     }
@@ -292,7 +292,7 @@ public class ScoreManager
         {
             int bonus = combos * bonusPerCombo;
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }
@@ -304,7 +304,7 @@ public class ScoreManager
         {
             int bonus = combos * 5;
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }
@@ -339,7 +339,7 @@ public class ScoreManager
         {
             int bonus = uniquePoints * 2;
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }
@@ -350,7 +350,7 @@ public class ScoreManager
         {
             int bonus = (int)(result.WordScore * 0.5f);
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }
@@ -361,7 +361,7 @@ public class ScoreManager
         {
             int bonus = (int)(result.WordScore * 0.5f);
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }
@@ -374,7 +374,7 @@ public class ScoreManager
             int bonus = (int)(result.WordScore * 1f);
             
             result.BonusScores.Add(BonusScore.FromImprovement(
-                improvement, improvement.shortDescription, bonus));
+                improvement, improvement.ShortDescription, bonus));
             result.WordScore += bonus;
         }
     }

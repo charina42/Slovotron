@@ -20,12 +20,18 @@ public class LetterBagPopup : MonoBehaviour
     public GameObject activeLettersContent;
     public GameObject usedLettersContent;
 
-    [SerializeField] private PopupAnimator popupAnimator;
+    private PopupAnimator _popupAnimator;
 
     private LetterBag _letterBag;
 
     private void Awake()
     {
+        _popupAnimator = popupPanel.GetComponent<PopupAnimator>();
+        if (_popupAnimator == null)
+        {
+            _popupAnimator = popupPanel.AddComponent<PopupAnimator>();
+        }
+        
         // Подписываемся на событие нажатия кнопки закрытия
         closeButton.onClick.AddListener(ClosePopup);
         
@@ -40,10 +46,9 @@ public class LetterBagPopup : MonoBehaviour
         }
     }
     
-    public void Initialize(LetterBag letterBag, PopupAnimator popupAnimator)
+    public void Initialize(LetterBag letterBag)
     {
         _letterBag = letterBag;
-        this.popupAnimator = popupAnimator;
     }
     
     private void CreateBackgroundBlocker()
@@ -76,9 +81,9 @@ public class LetterBagPopup : MonoBehaviour
         popupPanel.SetActive(true);
         
         // Показываем анимацию
-        if (popupAnimator != null)
+        if (_popupAnimator != null)
         {
-            popupAnimator.Show();
+            _popupAnimator.Show();
         }
         
         // Блокируем взаимодействие с другими элементами
@@ -90,9 +95,9 @@ public class LetterBagPopup : MonoBehaviour
     public void ClosePopup()
     {
         // Скрываем анимацию
-        if (popupAnimator != null)
+        if (_popupAnimator != null)
         {
-            popupAnimator.Hide();
+            _popupAnimator.Hide();
         }
         
         // Деактивируем блокировщик и попап

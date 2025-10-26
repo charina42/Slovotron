@@ -116,7 +116,7 @@ public class TutorialManager
         
         _isTutorialActive = true;
         _currentStepIndex = 0;
-        ShowStep(_currentStepIndex);
+        // ShowStep(_currentStepIndex);
     }
 
     private void ShowStep(int stepIndex)

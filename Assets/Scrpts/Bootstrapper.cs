@@ -12,6 +12,7 @@ public class Bootstrapper : MonoBehaviour
     [Header("Popup References")]
     [SerializeField] private LetterBagPopup letterBagPopup;
     [SerializeField] private ImprovementChosePopup improvementChosePopup;
+    [SerializeField] private MetaImprovementPopup metaImprovementPopup;
     [SerializeField] private GameOverPopup gameOverPopup;
     [SerializeField] private GiveUpPopup giveUpPopup;
     [SerializeField] private GameWinPopup gameWinPopup;
@@ -22,14 +23,14 @@ public class Bootstrapper : MonoBehaviour
     [SerializeField] private ImprovementPanel improvementPanel;
     [SerializeField] private LeaderboardManager leaderboardManager;
     [SerializeField] private ScoreAnimationController scoreAnimationController;
-    [SerializeField] private PopupAnimator popupAnimator;
+    // [SerializeField] private PopupAnimator popupAnimator;
     
     private void Awake()
     {
         Debug.Log("Bootstrapper Awake");
         
         InitializeServices();
-        InitializePopupsWithAnimator();
+        InitializePopups();
         InitializeManagers();
         LinkDependencies();
     }
@@ -45,17 +46,17 @@ public class Bootstrapper : MonoBehaviour
         Services.ImprovementSystem = new ImprovementSystem();
         Services.TutorialManager = new TutorialManager();
         Services.DictionaryManager = new DictionaryManager();
+        Services.MetaImprovementManager = new MetaImprovementManager();
     }
 
-    private void InitializePopupsWithAnimator()
+    private void InitializePopups()
     {
-        // Инициализация всех попапов с аниматором
-        letterBagPopup.Initialize(Services.LetterBag, popupAnimator);
-        improvementChosePopup.Initialize(popupAnimator);
-        gameOverPopup.Initialize(popupAnimator);
-        giveUpPopup.Initialize(popupAnimator);
-        gameWinPopup.Initialize(popupAnimator);
-        tutorialPopup.Initialize(popupAnimator);
+        letterBagPopup.Initialize(Services.LetterBag);
+        // improvementChosePopup.Initialize(popupAnimator);
+        // gameOverPopup.Initialize(popupAnimator);
+        // giveUpPopup.Initialize(popupAnimator);
+        // gameWinPopup.Initialize(popupAnimator);
+        // tutorialPopup.Initialize(popupAnimator);
     }
 
     private void InitializeManagers()
@@ -63,10 +64,11 @@ public class Bootstrapper : MonoBehaviour
         // Инициализация менеджеров
         wordPanelManager.Initialize();
         leaderboardManager.Initialize(Services.MetaGameData);
-        Services.Round.Initialize(Services.MetaGameData, uiRoundScore);
-        Services.ImprovementSystem.Initialize(Services.LetterBag);
+        Services.Round.Initialize(uiRoundScore);
+        Services.ImprovementSystem.Initialize( Services.LetterBag, improvementChosePopup, metaImprovementPopup);
         scoreAnimationController.Initialize(uiRoundScore, wordPanelManager, improvementPanel);
         Services.TutorialManager.Initialize(tutorialPopup);
+        Services.MetaImprovementManager.Initialize(Services.ImprovementSystem, metaImprovementPopup, improvementPanel);
     }
 
     private void LinkDependencies()
@@ -82,6 +84,7 @@ public class Bootstrapper : MonoBehaviour
             Services.ImprovementSystem, 
             improvementPanel, 
             improvementChosePopup, 
+            metaImprovementPopup,
             gameOverPopup, 
             giveUpPopup, 
             gameWinPopup, 

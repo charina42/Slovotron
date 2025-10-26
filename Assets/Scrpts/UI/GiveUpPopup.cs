@@ -13,12 +13,19 @@ public class GiveUpPopup : MonoBehaviour
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private Button giveUpButton;
     [SerializeField] private Button continueButton;
-    [SerializeField] private GameObject backgroundBlocker;
-    [SerializeField] private PopupAnimator popupAnimator;
+    
+    private GameObject _backgroundBlocker; 
+    private PopupAnimator _popupAnimator;
 
     private void Awake()
     {
-        if (backgroundBlocker == null)
+        _popupAnimator = popup.GetComponent<PopupAnimator>();
+        if (_popupAnimator == null)
+        {
+            _popupAnimator = popup.AddComponent<PopupAnimator>();
+        }
+        
+        if (_backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         }
@@ -27,22 +34,17 @@ public class GiveUpPopup : MonoBehaviour
         continueButton.onClick.AddListener(Continue);
     }
     
-    public void Initialize(PopupAnimator popupAnimator)
-    {
-        this.popupAnimator = popupAnimator;
-    }
-    
     private void CreateBackgroundBlocker()
     {
         // Создаем объект для блокировки взаимодействия
-        backgroundBlocker = new GameObject("BackgroundBlocker");
-        backgroundBlocker.transform.SetParent(transform.parent);
-        backgroundBlocker.transform.SetAsFirstSibling();
-        backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
-        backgroundBlocker.AddComponent<Button>().onClick.AddListener(Continue);
+        _backgroundBlocker = new GameObject("BackgroundBlocker");
+        _backgroundBlocker.transform.SetParent(transform.parent);
+        _backgroundBlocker.transform.SetAsFirstSibling();
+        _backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
+        _backgroundBlocker.AddComponent<Button>().onClick.AddListener(Continue);
         
         // Устанавливаем растяжение на весь экран
-        RectTransform rectTransform = backgroundBlocker.GetComponent<RectTransform>();
+        RectTransform rectTransform = _backgroundBlocker.GetComponent<RectTransform>();
         rectTransform.anchorMin = Vector2.zero;
         rectTransform.anchorMax = Vector2.one;
         rectTransform.sizeDelta = Vector2.zero;
@@ -52,16 +54,16 @@ public class GiveUpPopup : MonoBehaviour
     public void Show()
     {
         // Активируем блокировщик и попап
-        if (backgroundBlocker != null)
+        if (_backgroundBlocker != null)
         {
-            backgroundBlocker.SetActive(true);
+            _backgroundBlocker.SetActive(true);
         }
         popup.SetActive(true);
         
         // Показываем анимацию
-        if (popupAnimator != null)
+        if (_popupAnimator != null)
         {
-            popupAnimator.Show();
+            _popupAnimator.Show();
         }
         
         // Блокируем взаимодействие с другими элементами
@@ -76,15 +78,15 @@ public class GiveUpPopup : MonoBehaviour
     private void Hide()
     {
         // Скрываем анимацию
-        if (popupAnimator != null)
+        if (_popupAnimator != null)
         {
-            popupAnimator.Hide();
+            _popupAnimator.Hide();
         }
         
         // Деактивируем блокировщик и попап
-        if (backgroundBlocker != null)
+        if (_backgroundBlocker != null)
         {
-            backgroundBlocker.SetActive(false);
+            _backgroundBlocker.SetActive(false);
         }
         
         // Разблокируем взаимодействие с другими элементами
@@ -99,7 +101,7 @@ public class GiveUpPopup : MonoBehaviour
         {
             if (button != giveUpButton && 
                 button != continueButton && 
-                button.gameObject != backgroundBlocker && 
+                button.gameObject != _backgroundBlocker && 
                 !button.transform.IsChildOf(popup.transform))
             {
                 button.interactable = interactable;
@@ -117,9 +119,9 @@ public class GiveUpPopup : MonoBehaviour
     private void OnDestroy()
     {
         // Убираем блокировщик при уничтожении объекта
-        if (backgroundBlocker != null)
+        if (_backgroundBlocker != null)
         {
-            Destroy(backgroundBlocker);
+            Destroy(_backgroundBlocker);
         }
     }
 }

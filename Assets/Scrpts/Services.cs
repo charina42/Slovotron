@@ -13,6 +13,7 @@ public class Services
         public static WordPanelManager WordPanelManager { get; set; }
         public static MetaGameData MetaGameData { get; set; }
         public static ImprovementSystem ImprovementSystem { get; set; }
+        public static MetaImprovementManager MetaImprovementManager { get; set; }
         public static TutorialManager TutorialManager { get; set; }
         public static DictionaryManager DictionaryManager { get; set; }
     }

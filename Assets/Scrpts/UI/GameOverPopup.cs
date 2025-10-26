@@ -14,7 +14,7 @@ public class GameOverPopup : MonoBehaviour
     [SerializeField] private TMP_Text _bestScoreText;
     [SerializeField] private TMP_Text _statisticsText;
     [SerializeField] private Button _restartButton;
-    [SerializeField] private GameObject backgroundBlocker;
+    private GameObject backgroundBlocker;
     [SerializeField] private PopupAnimator popupAnimator;
 
     // Текстовые константы для разных типов проигрыша
@@ -25,17 +25,18 @@ public class GameOverPopup : MonoBehaviour
 
     private void Awake()
     {
+        popupAnimator = popup.GetComponent<PopupAnimator>();
+        if (popupAnimator == null)
+        {
+            popupAnimator = popup.AddComponent<PopupAnimator>();
+        }
+        
         if (backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         } 
         
         _restartButton.onClick.AddListener(RestartGame);
-    }
-    
-    public void Initialize(PopupAnimator popupAnimator)
-    {
-        this.popupAnimator = popupAnimator;
     }
     
     private void CreateBackgroundBlocker()

@@ -19,6 +19,7 @@ namespace YG
         public bool IsImprovementPopupOpen { get; set; }
         public string LastValidatedWord { get; set; }
         public ScoreManager.ScoreResult LastScoreResult { get; set; }
+        public bool IsMetaImprovementPopupOpen { get; set; } // Новый флаг для мета-попапа
     }
 }
 
@@ -65,6 +66,7 @@ public class WordGameManager : MonoBehaviour
     
     private ImprovementPanel _improvementPanel;
     private ImprovementChosePopup _improvementChosePopup;
+    private MetaImprovementPopup _metaImprovementPopup; // Новый попап для мета-улучшений
     private GameOverPopup _gameOverPopup;
     private GiveUpPopup _giveUpPopup;
     private GameWinPopup _gameWinPopup;
@@ -79,27 +81,29 @@ public class WordGameManager : MonoBehaviour
     public void Initialize(MetaGameData metaGameData, LetterBag letterBag, WordPanelManager wordPanelManager,
         LetterBagPopup letterBagPopup, RoundManager roundManager, ScoreManager scoreManager, 
         ImprovementSystem improvementSystem, ImprovementPanel improvementPanel,
-        ImprovementChosePopup improvementChosePopup, GameOverPopup gameOverPopup, GiveUpPopup giveUpPopup, 
+        ImprovementChosePopup improvementChosePopup, MetaImprovementPopup metaImprovementPopup, // Добавлен новый параметр
+        GameOverPopup gameOverPopup, GiveUpPopup giveUpPopup, 
         GameWinPopup gameWinPopup, LeaderboardManager leaderboardManager,
         ScoreAnimationController scoreAnimationController, TutorialManager tutorialManager,
         DictionaryManager dictionaryManager)
     {
         _metaGameData = metaGameData; 
         _letterBag = letterBag;
-         _letterBagPopup = letterBagPopup;
-         _roundManager = roundManager;
-         _scoreManager = scoreManager;
-         _improvementSystem = improvementSystem;
-         _improvementPanel = improvementPanel;
-         _improvementChosePopup = improvementChosePopup;
-         _wordPanelManager = wordPanelManager;
-         _gameOverPopup = gameOverPopup;
-         _giveUpPopup = giveUpPopup;
-         _gameWinPopup = gameWinPopup;
-         _leaderboardManager = leaderboardManager;
-         _scoreAnimationController = scoreAnimationController;
-         _tutorialManager = tutorialManager;
-         _dictionaryManager = dictionaryManager;
+        _letterBagPopup = letterBagPopup;
+        _roundManager = roundManager;
+        _scoreManager = scoreManager;
+        _improvementSystem = improvementSystem;
+        _improvementPanel = improvementPanel;
+        _improvementChosePopup = improvementChosePopup;
+        _metaImprovementPopup = metaImprovementPopup; // Инициализируем новый попап
+        _wordPanelManager = wordPanelManager;
+        _gameOverPopup = gameOverPopup;
+        _giveUpPopup = giveUpPopup;
+        _gameWinPopup = gameWinPopup;
+        _leaderboardManager = leaderboardManager;
+        _scoreAnimationController = scoreAnimationController;
+        _tutorialManager = tutorialManager;
+        _dictionaryManager = dictionaryManager;
          
         submitButton.onClick.AddListener(CheckWord);
         refreshButton.onClick.AddListener(Refresh);
@@ -109,6 +113,7 @@ public class WordGameManager : MonoBehaviour
         eraseButton.onClick.AddListener(EraseWord);
         
         ImprovementSystem.OnImprovementSelected += ImprovementSelectedProceed;
+        MetaImprovementManager.OnImprovementSelected += ImprovementSelectedProceed;
         _letterBag.OnLetterReplaced += HandleLetterReplaced;
         GiveUpPopup.OnGiveUpSelected += GameOver;
         GameOverPopup.OnNewGameSelected += LoadNewGame;
@@ -137,6 +142,10 @@ public class WordGameManager : MonoBehaviour
         {
             RestoreImprovementPopup();
         }
+        else if (YG2.saves.IsMetaImprovementPopupOpen && YG2.saves.CurrentImprovementOptions != null)
+        {
+            RestoreMetaImprovementPopup(); // Восстанавливаем мета-попап
+        }
         else
         {
             ShowOnBoardLetters();
@@ -147,9 +156,12 @@ public class WordGameManager : MonoBehaviour
         _roundManager.SetRoundPanelData();
         ShowLetterBagCount();
         
+        Debug.Log($"IsTutorialCompleted {_tutorialManager.IsTutorialCompleted()}");
+        
         if (_tutorialManager != null && !_tutorialManager.IsTutorialCompleted())
         {
             _tutorialManager.StartTutorial();
+            StartCoroutine(ShowTutorialStepWithDelayCoroutine(_tutorialManager.GetCurrentStepIndex(), 2f));
         }
     }
     
@@ -159,13 +171,25 @@ public class WordGameManager : MonoBehaviour
         
         // Восстанавливаем попап с сохраненными данными
         _improvementChosePopup.ShowPopup(
-            YG2.saves.CurrentImprovementOptions,
-            YG2.saves.LastValidatedWord,
-            YG2.saves.LastScoreResult
+            YG2.saves.CurrentImprovementOptions
         );
         
         // Очищаем флаг, чтобы при следующей загрузке не восстанавливать повторно
         YG2.saves.IsImprovementPopupOpen = false;
+        YG2.SaveProgress();
+    }
+
+    private void RestoreMetaImprovementPopup()
+    {
+        Debug.Log("Restoring meta improvement popup state");
+        
+        // Восстанавливаем мета-попап с сохраненными данными
+        _metaImprovementPopup.ShowPopup(
+            YG2.saves.CurrentImprovementOptions, _improvementSystem.CanAddMoreImprovements()
+        );
+        
+        // Очищаем флаг, чтобы при следующей загрузке не восстанавливать повторно
+        YG2.saves.IsMetaImprovementPopupOpen = false;
         YG2.SaveProgress();
     }
 
@@ -178,12 +202,18 @@ public class WordGameManager : MonoBehaviour
         if (_metaGameData.currentPlayerRecord > 0)
             _isTutorialShow = false;
 
-        _letterBag.DebugPrintLetterInventory();
+        // _letterBag.DebugPrintLetterInventory();
         _roundManager.SetRoundPanelData();
         ShowLetterBagCount();
         _improvementPanel.ShowImprovements(YG2.saves.ActiveImprovements);
         OnScoreChanged?.Invoke(YG2.saves.TotalScore);
         YG2.SaveProgress();
+        
+        // if (_tutorialManager != null && !_tutorialManager.IsTutorialCompleted())
+        // {
+        //     _tutorialManager.StartTutorial();
+        //     StartCoroutine(ShowTutorialStepWithDelayCoroutine(0, 2f));
+        // }
     }
 
     // ========== GAME STATE MANAGEMENT ==========
@@ -205,6 +235,7 @@ public class WordGameManager : MonoBehaviour
         YG2.SetDefaultSaves();
         YG2.saves.GameStatistics = new GameStatistics();
         YG2.saves.IsImprovementPopupOpen = false;
+        YG2.saves.IsMetaImprovementPopupOpen = false; // Очищаем флаг мета-попапа
         YG2.saves.CurrentImprovementOptions.Clear();
         YG2.saves.LastValidatedWord = null;
         YG2.saves.LastScoreResult = null;
@@ -255,7 +286,8 @@ public class WordGameManager : MonoBehaviour
     {
         // Очищаем сохраненное состояние попапа
         YG2.saves.IsImprovementPopupOpen = false;
-        YG2.saves.CurrentImprovementOptions.Clear();;
+        YG2.saves.IsMetaImprovementPopupOpen = false; // Очищаем флаг мета-попапа
+        YG2.saves.CurrentImprovementOptions.Clear();
         YG2.saves.LastValidatedWord = null;
         YG2.saves.LastScoreResult = null;
         
@@ -278,9 +310,6 @@ public class WordGameManager : MonoBehaviour
         }
         
         YG2.SaveProgress();
-        
-       
-       
         
         // _tutorialManager.ShowNextStep();
     }
@@ -601,45 +630,65 @@ public class WordGameManager : MonoBehaviour
                 _letterBag.ReturnUsedLettersToBag();
                 isRoundEnds = true;
                 break;
-            case RoundManager.RoundState.Failed:
-                GameOver(false);
-                return;
+            // case RoundManager.RoundState.Failed:
+            //     GameOver(false);
+            //     return;
             case RoundManager.RoundState.InProgress:
                 isRoundEnds = false;
                 break;
-            case RoundManager.RoundState.Win:
-                WinGame();
-                return;
+            // case RoundManager.RoundState.Win:
+            //     WinGame();
+            //     return;
             default:
                 throw new ArgumentOutOfRangeException();
         }
 
-        List<ImprovementRarity> improvementRarityList;
+        List<ImprovementRarity> improvementRarityList = RarityGenerator.GenerateRarityList();
+        
+        // if (isRoundEnds)
+        // {
+                // var excessRatio = _roundManager.CalculateRoundExcessRatio();
+                // improvementRarityList = RarityGenerator.GetRoundCompletionRarities(excessRatio);
+        // }
+        // else
+        // {
+        //     var wordContributionPercentage = _roundManager.CalculateWordContributionPercentage(scoreResult.WordScore);
+        //     improvementRarityList = RarityGenerator.GetWordRarities(wordContributionPercentage);
+        // }
+
+        _improvementSystem.GenerateImprovementOptions(isRoundEnds, improvementRarityList);
+        
+        SaveImprovementPopupState(word, scoreResult, isRoundEnds);
+      
         if (isRoundEnds)
         {
-            improvementRarityList = _roundManager.GetRoundCompletionRarities();
+            _metaImprovementPopup.ShowPopup(YG2.saves.CurrentImprovementOptions, 
+                _improvementSystem.CanAddMoreImprovements());
         }
         else
         {
-            var wordContributionPercentage = _roundManager.CalculateWordContributionPercentage(scoreResult.WordScore);
-            improvementRarityList = _improvementSystem.GetWordRarities(wordContributionPercentage);
+            _improvementChosePopup.ShowPopup(YG2.saves.CurrentImprovementOptions);
         }
-
-        var improvementOptions = _improvementSystem.ShowImprovementOptions(isRoundEnds, improvementRarityList);
         
-        // Сохраняем состояние перед показом попапа
-        SaveImprovementPopupState(improvementOptions, word, scoreResult);
-        
-        _improvementChosePopup.ShowPopup(improvementOptions, word, scoreResult);
         ShowLetterBagCount();
         _tutorialManager?.ShowSpecificStep("bag_improvements");
     }
     
-    private void SaveImprovementPopupState(List<ImprovementOption> options, string word, ScoreManager.ScoreResult scoreResult)
+    private void SaveImprovementPopupState(string word, ScoreManager.ScoreResult scoreResult, bool isMetaImprovement)
     {
         Debug.Log("SaveImprovementPopupState");
-        YG2.saves.IsImprovementPopupOpen = true;
-        // YG2.saves.CurrentImprovementOptions = options;
+        
+        if (isMetaImprovement)
+        {
+            YG2.saves.IsMetaImprovementPopupOpen = true;
+            YG2.saves.IsImprovementPopupOpen = false;
+        }
+        else
+        {
+            YG2.saves.IsImprovementPopupOpen = true;
+            YG2.saves.IsMetaImprovementPopupOpen = false;
+        }
+        
         YG2.saves.LastValidatedWord = word;
         YG2.saves.LastScoreResult = scoreResult;
         YG2.SaveProgress();

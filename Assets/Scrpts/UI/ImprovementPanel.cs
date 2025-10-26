@@ -1,32 +1,40 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class ImprovementPanel : MonoBehaviour
-
 {
     public Transform parentPanel;
     public GameObject improvementUnitPrefab;
+    
+    public event Action<ImprovementOption> OnImprovementClicked;
 
-    public void ShowImprovements(List<ImprovementOption> ActiveImprovements)
+    public void ShowImprovements(List<ImprovementOption> activeImprovements)
     {
         foreach (Transform child in parentPanel)
         {
             Destroy(child.gameObject);
         }
 
-        foreach (var improvement in ActiveImprovements)
+        foreach (var improvement in activeImprovements)
         {
             GameObject unitInstance = Instantiate(improvementUnitPrefab, parentPanel);
             var unit = unitInstance.GetComponent<ImprovementUnit>();
             
-            Debug.Log(improvement.shortDescription);
-
             if (unit != null)
             {
                 unit.Initialize(improvement);
+                
+                var button = unitInstance.GetComponent<Button>();
+                if (button == null)
+                {
+                    button = unitInstance.AddComponent<Button>();
+                }
+                
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => OnImprovementClicked?.Invoke(improvement));
             }
         }
     }
@@ -41,18 +49,12 @@ public class ImprovementPanel : MonoBehaviour
                 var image = child.GetComponent<Image>();
                 if (image != null)
                 {
-                    // Сохраняем исходные значения
                     Color originalColor = image.color;
                     Vector3 originalScale = child.localScale;
                 
-                    // Создаем последовательность анимации
                     Sequence highlightSequence = DOTween.Sequence();
-                
-                    // Первая часть: увеличиваем размер и осветляем
                     highlightSequence.Join(image.DOColor(Color.Lerp(originalColor, Color.white, 0.5f), duration * 0.3f));
                     highlightSequence.Join(child.DOScale(originalScale * 1.2f, duration * 0.3f));
-                
-                    // Вторая часть: возвращаем к исходному состоянию
                     highlightSequence.Append(image.DOColor(originalColor, duration * 0.7f));
                     highlightSequence.Join(child.DOScale(originalScale, duration * 0.7f));
                 }

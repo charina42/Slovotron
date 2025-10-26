@@ -117,7 +117,7 @@ public class BagImprovementOptionBuilder
                 break;
             
             case "NeighborMultiplier":
-                _letterBag.AddNeighborMultiplierToPool(option.TargetLetterChar, option.modifier);
+                _letterBag.AddNeighborMultiplierToPool(option.TargetLetterChar, option.Modifier);
                 break;
 
             case "ReturnLetter":
@@ -291,19 +291,19 @@ public class BagImprovementOptionBuilder
         }
 
         // Определяем направление множителя (левый или правый)
-        string multiplierDirection = Random.Range(0, 2) == 0 ? "Left" : "Right";
-        string modifier = multiplierDirection;
+        var multiplierDirection = Random.Range(1, 2); //== 1 ? "Left" : "Right";
+        // string modifier = multiplierDirection;
     
         var basePoints = _letterBag.LetterBasePoints[char.ToLower(targetLetter)];
     
         var description = string.Format(
             baseImprovement.description,
             targetLetter,
-            multiplierDirection == "Left" ? "левой" : "правой"
+            multiplierDirection  == 1 ? "левой" : "правой"
         );
 
         var option = CreateOption(baseImprovement, targetLetter, basePoints, null, description);
-        option.modifier = modifier; // Сохраняем направление в modifier
+        option.Modifier = multiplierDirection; // Сохраняем направление в modifier
         return option;
     }
 
@@ -339,8 +339,8 @@ public class BagImprovementOptionBuilder
             TargetLetterChar = targetLetter,
             TargetLetterPoints = targetLetterPoints,
             Description = description,
-            shortDescription = baseImprovement.shortDescription,
-            modifier = baseImprovement.modifier, // Сохраняем исходный modifier
+            ShortDescription = baseImprovement.shortDescription,
+            Modifier = baseImprovement.modifier, // Сохраняем исходный modifier
             IsMeta = false,
             Rarity = ParseRarity(baseImprovement.rarity)
         };

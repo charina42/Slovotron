@@ -257,7 +257,7 @@ public class ImprovementCard : MonoBehaviour, IPointerClickHandler
 
     private void CreateNeighborMultiplierVisualization(ImprovementOption option)
     {
-        var multiplierType = option.modifier == "Left" ? 
+        var multiplierType = option.Modifier == 1 ? 
             LetterType.NeighborMultiplierLeft : LetterType.NeighborMultiplierRight;
         
         var multiplierLetter = new LetterData(option.TargetLetterChar, 0, multiplierType);

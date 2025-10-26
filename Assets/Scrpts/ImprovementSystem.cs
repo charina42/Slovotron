@@ -2,7 +2,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
+using Scrpts;
 using Random = UnityEngine.Random;
 using YG;
 
@@ -11,7 +11,7 @@ namespace YG
     public partial class SavesYG
     {
         public readonly List<ImprovementOption> CurrentImprovementOptions = new List<ImprovementOption>();
-        public readonly List<ImprovementOption> ActiveImprovements = new List<ImprovementOption>();
+        public List<ImprovementOption> ActiveImprovements = new List<ImprovementOption>();
     }
 }
 
@@ -19,6 +19,7 @@ public class ImprovementSystem
 {
     private LetterBag _letterBag;
     private Dictionary<LetterData, int> _lettersPool;
+    private int _maxMetaImprovements;
     
     private BagImprovementOptionBuilder _bagOptionBuilder; 
     
@@ -27,21 +28,39 @@ public class ImprovementSystem
     
     public static event Action<bool> OnImprovementSelected;
 
-    public void Initialize(LetterBag letterBag)
+    private ImprovementChosePopup _improvementPopup;
+    private MetaImprovementPopup _metaImprovementPopup; 
+
+    public void Initialize(LetterBag letterBag, ImprovementChosePopup improvementPopup, 
+        MetaImprovementPopup metaImprovementPopup)
     {
         LoadImprovements();
+        _maxMetaImprovements = MetaGameData.MAX_META_IMPROVEMENTS;
         _letterBag = letterBag;
+        _improvementPopup = improvementPopup;
+        _metaImprovementPopup = metaImprovementPopup; // Инициализируем новый попап
         
         _bagOptionBuilder = new BagImprovementOptionBuilder(_letterBag, null);
         
         ImprovementChosePopup.OnCardSelected += HandleCardSelection;
+        ImprovementChosePopup.OnRerollRequested += HandleRerollRequest;
+        
+        // Добавляем обработчики для мета-попапа
+        // MetaImprovementPopup.OnImprovementSelected += HandleCardSelection;
+        _metaImprovementPopup.OnRerollRequested += HandleRerollRequest;
     }
 
-
-    public List<ImprovementOption> ShowImprovementOptions(bool isMajor, List<ImprovementRarity> rarities)
+    public List<ImprovementOption> GenerateImprovementOptions(bool isMajor, List<ImprovementRarity> rarities)
     {
-        Debug.Log("ShowImprovementOptions");
+        Debug.Log("GenerateImprovementOptions");
 
+        return isMajor ?
+            ShowMetaImprovementOptions(rarities) :
+            ShowBagImprovementOptions(rarities);
+    }
+
+    private List<ImprovementOption> ShowMetaImprovementOptions(List<ImprovementRarity> rarities)
+    {
         _lettersPool = _letterBag.AllLetterTiles();
         _bagOptionBuilder.UpdateLettersPool(_lettersPool);
 
@@ -50,54 +69,45 @@ public class ImprovementSystem
 
         for (var i = 0; i < 3; i++)
         {
-            ImprovementOption option;
-            int attempt = 0;
-    
-            do
-            {
-                if (isMajor)
-                {
-                    option = GenerateRandomImprovement(existingOptions, rarities[i]);
-                }
-                else
-                {
-                    option = GenerateRandomBagImprovement(existingOptions, rarities[i]);
-                }
+            ImprovementOption option = GenerateRandomImprovement(existingOptions, rarities[i]);
         
-                attempt++;
-        
-                // Если после 5 попыток не нашли валидное улучшение, используем fallback
-                if (option == null && attempt >= 5)
-                {
-                    if (isMajor)
-                    {
-                        option = GetFallbackMetaImprovement(rarities[i]);
-                    }
-                    else
-                    {
-                        option = GetFallbackImprovement(rarities[i]);
-                    }
-                }
-        
-            } while (option == null && attempt < 10); // Максимум 10 попыток
-
             if (option != null)
             {
                 finalOptions.Add(option);
                 existingOptions.Add(option);
-                Debug.Log($"ImprovementOption {option.EffectType}");
+                Debug.Log($"Meta ImprovementOption {option.EffectType}");
             }
         }
 
         YG2.saves.CurrentImprovementOptions.Clear();
         YG2.saves.CurrentImprovementOptions.AddRange(finalOptions);
-        Debug.Log("ImprovementOptions have been added");
         return finalOptions;
     }
 
-    public List<ImprovementOption> ShowBagImprovementOptions(float contributionPercentage)
+    private List<ImprovementOption> ShowBagImprovementOptions(List<ImprovementRarity> rarities)
     {
-        return YG2.saves.CurrentImprovementOptions;
+        _lettersPool = _letterBag.AllLetterTiles();
+        _bagOptionBuilder.UpdateLettersPool(_lettersPool);
+
+        var existingOptions = new List<ImprovementOption>();
+        var finalOptions = new List<ImprovementOption>();
+
+        for (var i = 0; i < 3; i++)
+        {
+            ImprovementOption option = GenerateRandomBagImprovement(existingOptions, rarities[i]);
+        
+            if (option != null)
+            {
+                finalOptions.Add(option);
+                existingOptions.Add(option);
+                Debug.Log($"Bag ImprovementOption {option.EffectType}");
+            }
+        }
+
+        YG2.saves.CurrentImprovementOptions.Clear();
+        YG2.saves.CurrentImprovementOptions.AddRange(finalOptions);
+        
+        return finalOptions;
     }
 
     private ImprovementData GetRandomImprovementByRarity(List<ImprovementData> improvements, ImprovementRarity rarity)
@@ -172,69 +182,60 @@ public class ImprovementSystem
     }
 
     private ImprovementOption GenerateRandomImprovement(List<ImprovementOption> existingOptions, ImprovementRarity rarity)
-{
-    ImprovementData baseImprovement;
-    ImprovementOption newOption = null;
-    bool isUnique;
-    int attempts = 0;
-    const int maxAttempts = 50;
-    const int fallbackAttempts = 30; // После этого количества попыток начинаем пробовать другие редкости
-
-    do
     {
-        isUnique = true;
-        
-        // После fallbackAttempts попыток пробуем улучшения других редкостей
-        if (attempts > fallbackAttempts)
-        {
-            var allRarities = Enum.GetValues(typeof(ImprovementRarity)).Cast<ImprovementRarity>().ToList();
-            var randomRarity = allRarities[Random.Range(0, allRarities.Count)];
-            baseImprovement = GetRandomImprovementByRarity(_improvementsDataList.ToList(), randomRarity);
-        }
-        else
-        {
-            baseImprovement = GetRandomImprovementByRarity(_improvementsDataList.ToList(), rarity);
-        }
+        ImprovementData baseImprovement;
+        ImprovementOption newOption = null;
+        bool isUnique;
+        int attempts = 0;
+        const int maxAttempts = 50;
+        const int fallbackAttempts = 30; // После этого количества попыток начинаем пробовать другие редкости
 
-        // Проверка 1: Улучшение уже активно?
-        if (YG2.saves.ActiveImprovements.Any(imp => imp.EffectType == baseImprovement.effect))
+        do
         {
-            isUnique = false;
+            isUnique = true;
+            
+            // После fallbackAttempts попыток пробуем улучшения других редкостей
+            if (attempts > fallbackAttempts)
+            {
+                var allRarities = Enum.GetValues(typeof(ImprovementRarity)).Cast<ImprovementRarity>().ToList();
+                var randomRarity = allRarities[Random.Range(0, allRarities.Count)];
+                baseImprovement = GetRandomImprovementByRarity(_improvementsDataList.ToList(), randomRarity);
+            }
+            else
+            {
+                baseImprovement = GetRandomImprovementByRarity(_improvementsDataList.ToList(), rarity);
+            }
+
+            // Проверка 1: Улучшение уже активно?
+            // if (YG2.saves.ActiveImprovements.Any(imp => imp.EffectType == baseImprovement.effect))
+            // {
+            //     isUnique = false;
+            //     attempts++;
+            //     continue;
+            // }
+
+            // Проверка 2: Улучшение уже есть в текущем наборе?
+            if (existingOptions.Any(opt => opt.EffectType == baseImprovement.effect))
+            {
+                isUnique = false;
+                attempts++;
+                continue;
+            }
+
+            newOption = CreateOptionFromData(baseImprovement, rarity);
+
             attempts++;
-            continue;
-        }
+            if (attempts >= maxAttempts)
+            {
+                Debug.LogWarning("Не удалось сгенерировать уникальное улучшение.");
+                return GetFallbackMetaImprovement(rarity); // Запасной вариант для мета-улучшений
+            }
+        } while (!isUnique);
 
-        // Проверка 2: Улучшение уже есть в текущем наборе?
-        if (existingOptions.Any(opt => opt.EffectType == baseImprovement.effect))
-        {
-            isUnique = false;
-            attempts++;
-            continue;
-        }
+        return newOption;
+    }
 
-        newOption = new ImprovementOption
-        {
-            EffectType = baseImprovement.effect,
-            Description = baseImprovement.description,
-            shortDescription = baseImprovement.shortDescription,
-            modifier = baseImprovement.modifier,
-            TargetLetterChar = '0',
-            IsMeta = true,
-            Rarity = rarity
-        };
-
-        attempts++;
-        if (attempts >= maxAttempts)
-        {
-            Debug.LogWarning("Не удалось сгенерировать уникальное улучшение.");
-            return GetFallbackMetaImprovement(rarity); // Запасной вариант для мета-улучшений
-        }
-    } while (!isUnique);
-
-    return newOption;
-}
-
-// Запасное мета-улучшение
+    // Запасное мета-улучшение
     private ImprovementOption GetFallbackMetaImprovement(ImprovementRarity rarity)
     {
         // Ищем любое улучшение, которое еще не активно
@@ -245,30 +246,12 @@ public class ImprovementSystem
         if (availableImprovements.Any())
         {
             var baseImprovement = availableImprovements[Random.Range(0, availableImprovements.Count)];
-            return new ImprovementOption
-            {
-                EffectType = baseImprovement.effect,
-                Description = baseImprovement.description,
-                shortDescription = baseImprovement.shortDescription,
-                modifier = baseImprovement.modifier,
-                TargetLetterChar = '0',
-                IsMeta = true,
-                Rarity = rarity
-            };
+            return CreateOptionFromData(baseImprovement, rarity);
         }
 
         // Если все улучшения уже активны, возвращаем любое
         var fallback = _improvementsDataList[Random.Range(0, _improvementsDataList.Length)];
-        return new ImprovementOption
-        {
-            EffectType = fallback.effect,
-            Description = fallback.description,
-            shortDescription = fallback.shortDescription,
-            modifier = fallback.modifier,
-            TargetLetterChar = '0',
-            IsMeta = true,
-            Rarity = rarity
-        };
+        return CreateOptionFromData(fallback, rarity);
     }
 
     // Проверяет, добавляет ли улучшение новые буквы (не требует существующих)
@@ -283,7 +266,7 @@ public class ImprovementSystem
         return additiveEffects.Contains(effectType);
     }
 
-// Запасное улучшение, которое всегда доступно
+    // Запасное улучшение, которое всегда доступно
     private ImprovementOption GetFallbackImprovement(ImprovementRarity rarity)
     {
         // Улучшения, которые всегда можно применить
@@ -313,6 +296,48 @@ public class ImprovementSystem
         };
     }
     
+    private void HandleRerollRequest()
+    {
+        Debug.Log("Rerolling improvement options");
+        
+        // Определяем, из какого попапа пришел запрос
+        bool isMetaPopup = _metaImprovementPopup != null && _metaImprovementPopup.IsActive();
+        bool isRegularPopup = _improvementPopup != null && _improvementPopup.IsActive();
+        
+        List<ImprovementOption> currentOptions = null;
+        
+        if (isMetaPopup)
+        {
+            currentOptions = _metaImprovementPopup?.GetCurrentOptions();
+        }
+        else if (isRegularPopup)
+        {
+            currentOptions = _improvementPopup?.GetCurrentOptions();
+        }
+        
+        if (currentOptions == null || currentOptions.Count == 0)
+        {
+            Debug.LogWarning("No current options available for reroll");
+            return;
+        }
+        
+        // Определяем тип улучшений и редкости на основе текущих карточек
+        bool isMajor = currentOptions[0].IsMeta;
+        var rarities = currentOptions.Select(opt => opt.Rarity).ToList();
+        
+        var newOptions = GenerateImprovementOptions(isMajor, rarities);
+        
+        // Обновляем соответствующий попап
+        if (isMetaPopup && _metaImprovementPopup != null)
+        {
+            _metaImprovementPopup.RerollImprovements(newOptions);
+        }
+        else if (isRegularPopup && _improvementPopup != null)
+        {
+            _improvementPopup.RerollCards(newOptions);
+        }
+    }
+    
     private void HandleCardSelection(ImprovementOption option)
     {
         // Обработка выбранной опции
@@ -327,10 +352,14 @@ public class ImprovementSystem
         else
         {
             _bagOptionBuilder.HandleImprovementEffect(option);
-
             YG2.saves.CurrentImprovementOptions.Clear();
             OnImprovementSelected?.Invoke(false); //isMajor = false
         }
+    }
+    
+    public bool CanAddMoreImprovements()
+    {
+        return YG2.saves.ActiveImprovements.Count < _maxMetaImprovements;
     }
 
     private void LoadImprovements()
@@ -346,38 +375,30 @@ public class ImprovementSystem
         _bagImprovementsDataList = bagImprovementsWrapper.improvements;
     }
     
-    
-    public List<ImprovementRarity> GetWordRarities(float contributionPercentage)
+    public void Cleanup()
     {
-        List<ImprovementRarity> rarities = new List<ImprovementRarity>();
+        ImprovementChosePopup.OnCardSelected -= HandleCardSelection;
+        ImprovementChosePopup.OnRerollRequested -= HandleRerollRequest;
+        
+        // Отписываемся от событий мета-попапа
+        // MetaImprovementPopup.OnImprovementSelected -= HandleCardSelection;
+        _metaImprovementPopup.OnRerollRequested -= HandleRerollRequest;
+    }
 
-        if (contributionPercentage <= 25f)
+    private ImprovementOption CreateOptionFromData(ImprovementData improvementData, ImprovementRarity rarity)
+    {
+        return new ImprovementOption
         {
-            rarities.AddRange(new[] { ImprovementRarity.Common, ImprovementRarity.Common, ImprovementRarity.Common });
-        }
-        else if (contributionPercentage >= 26f && contributionPercentage <= 35f)
-        {
-            rarities.AddRange(new[] { ImprovementRarity.Common, ImprovementRarity.Common, ImprovementRarity.Rare });
-        }
-        else if (contributionPercentage >= 36f && contributionPercentage <= 50f)
-        {
-            rarities.AddRange(new[] { ImprovementRarity.Rare, ImprovementRarity.Rare, ImprovementRarity.Rare });
-        }
-        else if (contributionPercentage >= 51f && contributionPercentage <= 75f)
-        {
-            rarities.AddRange(new[] { ImprovementRarity.Rare, ImprovementRarity.Rare, ImprovementRarity.Epic });
-        }
-        else if (contributionPercentage >= 76f && contributionPercentage <= 100f)
-        {
-            rarities.AddRange(new[] { ImprovementRarity.Rare, ImprovementRarity.Epic, ImprovementRarity.Epic });
-        }
-        else if (contributionPercentage > 100f)
-        {
-            rarities.AddRange(new[] { ImprovementRarity.Epic, ImprovementRarity.Epic, ImprovementRarity.Epic });
-        }
-
-        return rarities;
-    }   
+            EffectType = improvementData.effect,
+            Description = improvementData.description,
+            ShortDescription = improvementData.shortDescription,
+            Modifier = improvementData.modifier,
+            ModifierBonus = improvementData.modifierBonus,
+            TargetLetterChar = '0',
+            IsMeta = true,
+            Rarity = rarity
+        };
+    }
 }
 
 // Вспомогательный класс для хранения вариантов улучшений
@@ -388,8 +409,9 @@ public class ImprovementOption
     public char TargetLetterChar;
     public int TargetLetterPoints;
     public string Description;
-    public string shortDescription;
-    public string modifier;
+    public string ShortDescription;
+    public int Modifier;
+    public int ModifierBonus;
     public bool IsMeta;
     public ImprovementRarity Rarity;
 }
@@ -401,12 +423,14 @@ public class ImprovementData
     public string name;
     public string description; // Шаблон с {0}, {1}, {2} для подстановки буквы и очков
     public string shortDescription;
-    public string modifier;
+    public int modifier;
+    public int modifierBonus;
     public string effect;
     public string rarity;
     public string[] allowedLetters; 
     // public bool isMeta;
 }
+
 [System.Serializable]
 public class Wrapper
 {

@@ -2,38 +2,54 @@
 using TMPro;
 using System;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class ImprovementChosePopup : MonoBehaviour
 {
     public static event Action<ImprovementOption> OnCardSelected; 
+    public static event Action OnRerollRequested;
 
     [Header("UI Elements")] 
     public GameObject popupPanel;
-    public GameObject CardPrefab;
-    public Transform CardsParent;
-    public TMP_Text wordText;
-    public TMP_Text scoreInfoText;
+    public GameObject cardPrefab;
+    public Transform cardsParent;
+    // public TMP_Text wordText;
+    // public TMP_Text scoreInfoText;
+    public Button rerollButton;
+    public TMP_Text rerollButtonText;
+    
     public GameObject backgroundBlocker;
-    [SerializeField] private PopupAnimator popupAnimator;
+    private PopupAnimator _popupAnimator;
 
     private List<ImprovementOption> _currentOptions;
-    private string _lastWord;
-    private ScoreManager.ScoreResult _lastScoreResult;
+    // private string _lastWord;
+    // private ScoreManager.ScoreResult _lastScoreResult;
+    private bool _hasRerollAvailable = true;
+    private bool _isActive = false;
 
     private void Awake()
     {
+        _popupAnimator = popupPanel.GetComponent<PopupAnimator>();
+        if (_popupAnimator == null)
+        {
+            _popupAnimator = popupPanel.AddComponent<PopupAnimator>();
+        }
+        
         // Создаем блокировщик если он не установлен
         if (backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         }
+
+        // Настраиваем кнопку реролла
+        if (rerollButton != null)
+        {
+            rerollButton.onClick.AddListener(OnRerollButtonClicked);
+            UpdateRerollButtonState();
+        }
     }
-    
-    public void Initialize(PopupAnimator popupAnimator)
-    {
-        this.popupAnimator = popupAnimator;
-    }
+ 
     
     private void CreateBackgroundBlocker()
     {
@@ -54,11 +70,13 @@ public class ImprovementChosePopup : MonoBehaviour
         backgroundBlocker.SetActive(false);
     }
 
-    public void ShowPopup(List<ImprovementOption> options, string word, ScoreManager.ScoreResult scoreResult)
+    public void ShowPopup(List<ImprovementOption> options)
     {
         _currentOptions = options;
-        _lastWord = word;
-        _lastScoreResult = scoreResult;
+        // _lastWord = word;
+        // _lastScoreResult = scoreResult;
+        _hasRerollAvailable = true; // Сбрасываем доступность реролла при каждом новом показе
+        _isActive = true;
         
         // Активируем блокировщик и попап
         if (backgroundBlocker != null)
@@ -68,26 +86,27 @@ public class ImprovementChosePopup : MonoBehaviour
         popupPanel.SetActive(true);
         
         // Показываем анимацию
-        if (popupAnimator != null)
+        if (_popupAnimator != null)
         {
-            popupAnimator.Show();
+            _popupAnimator.Show();
         }
         
         // Блокируем взаимодействие с другими элементами
         SetInteractableForOtherUI(false);
-        UpdateWordAndScoreInfo();
+        // UpdateWordAndScoreInfo();
         ShowOptions(options);
+        UpdateRerollButtonState();
     }
 
-    private void UpdateWordAndScoreInfo()
-    {
-        scoreInfoText.text = _lastScoreResult.GetFullDescription(_lastWord);
-    }
+    // private void UpdateWordAndScoreInfo()
+    // {
+    //     scoreInfoText.text = _lastScoreResult.GetFullDescription(_lastWord);
+    // }
 
     private void ShowOptions(List<ImprovementOption> options)
     {
         // Очищаем предыдущие карточки
-        foreach (Transform child in CardsParent)
+        foreach (Transform child in cardsParent)
         {
             Destroy(child.gameObject);
         }
@@ -95,7 +114,7 @@ public class ImprovementChosePopup : MonoBehaviour
         // Создаем новые карточки улучшений
         for (int i = 0; i < Mathf.Min(options.Count, 3); i++)
         {
-            GameObject cardInstance = Instantiate(CardPrefab, CardsParent);
+            GameObject cardInstance = Instantiate(cardPrefab, cardsParent);
             var card = cardInstance.GetComponent<ImprovementCard>();
         
             if (card != null)
@@ -108,12 +127,46 @@ public class ImprovementChosePopup : MonoBehaviour
         }
     }
 
-    public void ClosePopup()
+    private void OnRerollButtonClicked()
     {
-        // Скрываем анимацию
-        if (popupAnimator != null)
+        if (_hasRerollAvailable)
         {
-            popupAnimator.Hide();
+            _hasRerollAvailable = false;
+            UpdateRerollButtonState();
+            OnRerollRequested?.Invoke();
+        }
+    }
+
+    private void UpdateRerollButtonState()
+    {
+        if (rerollButton != null)
+        {
+            rerollButton.interactable = _hasRerollAvailable;
+            if (rerollButtonText != null)
+            {
+                rerollButtonText.text = _hasRerollAvailable ? "Заменить карты" : "Замена использована";
+            }
+        }
+    }
+
+    public void RerollCards(List<ImprovementOption> newOptions)
+    {
+        _currentOptions = newOptions;
+        ShowOptions(newOptions);
+    }
+
+    public List<ImprovementOption> GetCurrentOptions()
+    {
+        return _currentOptions;
+    }
+
+    private void ClosePopup()
+    {
+        _isActive = true;
+        // Скрываем анимацию
+        if (_popupAnimator != null)
+        {
+            _popupAnimator.Hide();
         }
         
         // Деактивируем блокировщик и попап
@@ -126,8 +179,9 @@ public class ImprovementChosePopup : MonoBehaviour
         // Разблокируем взаимодействие с другими элементами
         SetInteractableForOtherUI(true);
         
-        _lastWord = null;
-        _lastScoreResult = null;
+        // _lastWord = null;
+        // _lastScoreResult = null;
+        _hasRerollAvailable = true; // Сбрасываем при закрытии
     }
 
     private void SetInteractableForOtherUI(bool interactable)
@@ -150,5 +204,10 @@ public class ImprovementChosePopup : MonoBehaviour
         {
             Destroy(backgroundBlocker);
         }
+    }
+    
+    public bool IsActive()
+    {
+        return _isActive;
     }
 }

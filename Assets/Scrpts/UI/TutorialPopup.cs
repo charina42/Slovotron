@@ -13,14 +13,21 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private Button continueButton;
-    [SerializeField] private GameObject backgroundBlocker; 
-    [SerializeField] private PopupAnimator popupAnimator; 
+    private GameObject _backgroundBlocker; 
+    
+    [SerializeField]  private PopupAnimator popupAnimator; 
     
 
     private void Awake()
     {
+        // popupAnimator = popup.GetComponent<PopupAnimator>();
+        // if (popupAnimator == null)
+        // {
+        //     popupAnimator = popup.AddComponent<PopupAnimator>();
+        // }
+        
         // Создаем блокировщик фона если он не установлен
-        if (backgroundBlocker == null)
+        if (_backgroundBlocker == null)
         {
             CreateBackgroundBlocker();
         }
@@ -31,22 +38,18 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
         }
     }
     
-    public void Initialize(PopupAnimator popupAnimator)
-    {
-        this.popupAnimator = popupAnimator;
-    }
 
     private void CreateBackgroundBlocker()
     {
         // Создаем объект для блокировки взаимодействия
-        backgroundBlocker = new GameObject("BackgroundBlocker");
-        backgroundBlocker.transform.SetParent(transform.parent);
-        backgroundBlocker.transform.SetAsFirstSibling();
-        backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
-        backgroundBlocker.AddComponent<Button>().onClick.AddListener(Hide);
+        _backgroundBlocker = new GameObject("BackgroundBlocker");
+        _backgroundBlocker.transform.SetParent(transform.parent);
+        _backgroundBlocker.transform.SetAsFirstSibling();
+        _backgroundBlocker.AddComponent<Image>().color = new Color(0, 0, 0, 0.5f);
+        _backgroundBlocker.AddComponent<Button>().onClick.AddListener(Hide);
         
         // Устанавливаем растяжение на весь экран
-        RectTransform rectTransform = backgroundBlocker.GetComponent<RectTransform>();
+        RectTransform rectTransform = _backgroundBlocker.GetComponent<RectTransform>();
         rectTransform.anchorMin = Vector2.zero;
         rectTransform.anchorMax = Vector2.one;
         rectTransform.sizeDelta = Vector2.zero;
@@ -55,13 +58,14 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
 
     public void Show()
     {
-        // Активируем блокировщик и попап
-        if (backgroundBlocker != null)
+            // Активируем блокировщик и попап
+        if (_backgroundBlocker != null)
         {
-            backgroundBlocker.SetActive(true);
+            _backgroundBlocker.SetActive(true);
         }
         popup.SetActive(true);
         
+        Debug.Log("TutorialPopup.Show");
         popupAnimator.Show();
         
         // Блокируем взаимодействие с другими элементами
@@ -73,9 +77,9 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
        
         popupAnimator.Hide();
         // Деактивируем блокировщик и попап
-        if (backgroundBlocker != null)
+        if (_backgroundBlocker != null)
         {
-            backgroundBlocker.SetActive(false);
+            _backgroundBlocker.SetActive(false);
         }
         
         // Разблокируем взаимодействие с другими элементами
@@ -90,7 +94,7 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
         foreach (Button button in allButtons)
         {
             if (button != continueButton && 
-                button.gameObject != backgroundBlocker && 
+                button.gameObject != _backgroundBlocker && 
                 !button.transform.IsChildOf(popup.transform))
             {
                 button.interactable = interactable;
@@ -128,9 +132,9 @@ public class TutorialPopup : MonoBehaviour, IPointerClickHandler
     private void OnDestroy()
     {
         // Убираем блокировщик при уничтожении объекта
-        if (backgroundBlocker != null)
+        if (_backgroundBlocker != null)
         {
-            Destroy(backgroundBlocker);
+            Destroy(_backgroundBlocker);
         }
     }
 
