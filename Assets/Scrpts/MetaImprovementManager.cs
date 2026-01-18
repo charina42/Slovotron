@@ -48,6 +48,7 @@ public class MetaImprovementManager
         {
             // АВТОМАТИЧЕСКОЕ УЛУЧШЕНИЕ - совпадающий тип
             UpgradeMetaImprovement(existingImprovement, newImprovement.Rarity);
+            _metaImprovementPopup.ClosePopup();
             OnImprovementSelected?.Invoke(true);
         }
         else if (CanAddMoreImprovements())

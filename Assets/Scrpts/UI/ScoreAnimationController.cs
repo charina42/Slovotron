@@ -4,7 +4,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Serialization;
-using UnityEngine.UI;
+// using UnityEngine.UI;
 
 public class ScoreAnimationController : MonoBehaviour
 {
@@ -22,7 +22,7 @@ public class ScoreAnimationController : MonoBehaviour
     [SerializeField] private float letterJumpDuration = 0.3f;
     [SerializeField] private float bonusHighlightDuration = 0.5f;
     [SerializeField] private const float MinWidth = 20f;
-    [SerializeField] private const float MaxWidth = 500f;
+    [SerializeField] private float maxWidth = 500f;
     [SerializeField] private float duration = 0.5f;
     [SerializeField] private float overshootDuration = 0.3f;
     [SerializeField] private Ease easeType = Ease.OutBack;
@@ -71,7 +71,7 @@ public class ScoreAnimationController : MonoBehaviour
         OnAnimationStart?.Invoke();
         ResetBar();
 
-        _totalScoreWidthRatio = (MaxWidth - MinWidth) / scoreData.WordScore;
+        _totalScoreWidthRatio = (maxWidth - MinWidth) / scoreData.WordScore;
         _accumulatedScore = 0;
         _currentScore = 0;
         _currentTime = 0f; // Сбрасываем время

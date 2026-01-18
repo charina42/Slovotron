@@ -2852,7 +2852,6 @@ RectTransform:
   m_Children:
   - {fileID: 627563861}
   - {fileID: 1098963732}
-  - {fileID: 1578678253}
   - {fileID: 1772590507}
   - {fileID: 84375061}
   - {fileID: 1637431558}
@@ -13075,7 +13074,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1578678252}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -13083,12 +13082,12 @@ RectTransform:
   - {fileID: 1281552900}
   - {fileID: 1251018441}
   - {fileID: 1432833708}
-  m_Father: {fileID: 247678570}
+  m_Father: {fileID: 1772590507}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -322.1}
-  m_SizeDelta: {x: 470, y: 50}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 114.6}
+  m_SizeDelta: {x: 1010, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1578678255
 MonoBehaviour:
@@ -13145,6 +13144,7 @@ MonoBehaviour:
   scoreText: {fileID: 1432833709}
   letterJumpDuration: 0.3
   bonusHighlightDuration: 0.5
+  maxWidth: 1010
   duration: 0.5
   overshootDuration: 0.3
   easeType: 27
@@ -14521,6 +14521,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1578678253}
   - {fileID: 386577454}
   - {fileID: 460585366}
   - {fileID: 1776972217}

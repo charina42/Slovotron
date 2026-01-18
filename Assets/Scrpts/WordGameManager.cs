@@ -19,7 +19,7 @@ namespace YG
         public bool IsImprovementPopupOpen { get; set; }
         public string LastValidatedWord { get; set; }
         public ScoreManager.ScoreResult LastScoreResult { get; set; }
-        public bool IsMetaImprovementPopupOpen { get; set; } // Новый флаг для мета-попапа
+        public bool IsMetaImprovementPopupOpen { get; set; } 
     }
 }
 
@@ -730,19 +730,20 @@ public class WordGameManager : MonoBehaviour
     
     private void Refresh()
     {
+        // _wordPanelManager.ClearWordSlots(false);
         if (_letterBag.GetCountInLocation(LetterLocation.InBag) > 0)
         {
-            List<GameObject> lettersToReplace = new List<GameObject>();
-            foreach (var letterObj in _allInGameLetters)
-            {
-                if (letterObj != null &&
-                    !_wordPanelManager.ContainsLetter(letterObj)) // Check if the letter is NOT in word slots
-                {
-                    lettersToReplace.Add(letterObj);
-                }
-            }
+            // List<GameObject> lettersToReplace = new List<GameObject>();
+            // foreach (var letterObj in _allInGameLetters)
+            // {
+            //     if (letterObj != null &&
+            //         !_wordPanelManager.ContainsLetter(letterObj)) // Check if the letter is NOT in word slots
+            //     {
+            //         lettersToReplace.Add(letterObj);
+            //     }
+            // }
 
-            foreach (var letterObj in lettersToReplace)
+            foreach (var letterObj in _allInGameLetters.ToList())
             {
                 if (letterObj != null)
                 {
@@ -756,6 +757,7 @@ public class WordGameManager : MonoBehaviour
                     ShowLetterBagCount();
                 }
             }
+            _wordPanelManager.ClearWordSlots(false);
             YG2.SaveProgress();
         }
         else
